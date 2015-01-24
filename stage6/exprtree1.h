@@ -1,5 +1,6 @@
-#include<stdio.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "Gsymbol.h"
 
 int symbol[26];
 
@@ -12,6 +13,42 @@ struct tree_node
 	struct tree_node *left;
 	struct tree_node *right;
 };
+
+struct tree_node * mkPgmNode(struct tree_node *left,struct tree_node *right)
+{
+	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
+	root->construct="..";
+	root->left=left;
+	root->right=right;
+	return root;
+}
+
+struct tree_node * mkDecllistNode(struct tree_node *left,struct tree_node *right)
+{
+	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
+	root->construct=".;";
+	root->left=left;
+	root->right=right;
+	return root;
+}
+
+struct tree_node * mkDeclNode(char *opt,struct tree_node *right)
+{
+	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
+	root->construct="%INTEGER%";
+	root->left=NULL;
+	root->right=right;
+	return root;
+}
+
+struct tree_node * mkIdlistvarNode(struct tree_node *left,struct tree_node *right)
+{
+	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
+	root->construct="%IDLIST%";
+	root->left=left;
+	root->right=right;
+	return root;
+}
 
 struct tree_node * mkCondNode(char *opt,struct tree_node *left,struct tree_node *right)
 {
