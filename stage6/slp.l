@@ -5,7 +5,6 @@
 %}
 
 digit [0-9]
-ID    [a-z]
 
 %%
 
@@ -18,8 +17,11 @@ endif                  {return ENDIF;}
 while                  {return WHILE;}
 do                     {return DO;}
 endwhile               {return ENDWHILE;}
-{ID}                   {yylval.var = *yytext ; return ID;}
-[();><=*+\n]           {return *yytext;}
+decl                   {return DECL;}
+enddecl                {return ENDDECL;}
+integer                {return INTEGER;}
+[a-zA-Z][a-zA-Z0-9]*   {yylval.var = yytext ; return ID;}
+[(),;><=*+\n\[\]]      {return *yytext;}
 .                      { }
 
 %%

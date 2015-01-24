@@ -2,12 +2,13 @@
 	#include <stdio.h>
 	#include "lex.yy.c"
 	#include "exprtree1.h"
+    #include "Gsymbol.h"
 %}
 
 %union
 {
 	int ival;
-	char var;
+	char *var;
 	struct tree_node *nptr;	
 };
 
@@ -33,37 +34,55 @@
 %left  '(' ')' 
 
 %%
-pgm   : Slist'\n'           			        {evaluate($1); exit(0);}
+pgm      : total           			               {evaluate($1); exit(0);}
   ;
-Slist : Slist Stmt          			        {$$=mkListNode($1,$2);}
+total    : gdecl Slist                             {}
   ;
-Slist : Stmt                			        {$$=$1;}
+gdecl    : DECL'\n'decllist ENDDECL'\n'            {}
   ;
-Stmt  : IF'('expr')'THEN Slist ENDIF';'         {$$=mkCondNode("IF",$3,$6);}
+decllist : decl'\n'decllist                        {;}
   ;
-Stmt  : WHILE'('expr')'DO Slist ENDWHILE';'     {$$=mkCondNode("WHILE",$3,$6);}
+decllist : decl'\n'                                {$$=mkDeclonlyNode($1);}
   ;
-Stmt  : ID'='expr';'        			        {$$=mkEquNode('=',$1,$3);}
+decl     : INTEGER idlist';'                       {$$=mkDeclNode("INTEGER",$2);}
+  ;
+idlist   : ID','idlist                             {$$=mkIdlistvarNode($1,$3);}
+  ;
+idlist   : ID'['NUM']'','idlist                    {$$=mkIdlistarrNode($1,$3,$6);}
+  ;
+idlist   : ID                                      {$$=mkVarNode($1);}
+  ;
+idlist   : ID'['NUM']'                             {$$=mkArrayNode($1,$3);}
+  ;
+Slist    : Slist Stmt          			           {$$=mkListNode($1,$2);}
+  ;
+Slist    :                 			               {}
+  ;
+Stmt     : IF'('expr')'THEN Slist ENDIF';'         {$$=mkCondNode("IF",$3,$6);}
+  ;
+Stmt     : WHILE'('expr')'DO Slist ENDWHILE';'     {$$=mkCondNode("WHILE",$3,$6);}
+  ;
+Stmt     : ID'='expr';'        			           {$$=mkEquNode('=',$1,$3);}
   ; 
-Stmt  : READ'('ID')'';'     			        {$$=mkRNode($3);}
+Stmt     : READ'('ID')'';'     			           {$$=mkRNode($3);}
   ;
-Stmt  : WRITE'('expr')'';'  			        {$$=mkWNode($3);}
+Stmt     : WRITE'('expr')'';'  			           {$$=mkWNode($3);}
   ;
-expr  : expr'<'expr         			        {$$=mkBoolOptNode("<",$1,$3);}
+expr     : expr'<'expr         			           {$$=mkBoolOptNode("<",$1,$3);}
   ;
-expr  : expr'>'expr         			        {$$=mkBoolOptNode(">",$1,$3);}
+expr     : expr'>'expr         			           {$$=mkBoolOptNode(">",$1,$3);}
   ;
-expr  : expr'=''='expr      			        {$$=mkBoolOptNode("==",$1,$4);}
+expr     : expr'=''='expr      			           {$$=mkBoolOptNode("==",$1,$4);}
   ;
-expr  : expr'+'expr         		        	{$$=mkOperatorNode('+',$1,$3);}
+expr     : expr'+'expr         		        	   {$$=mkOperatorNode('+',$1,$3);}
   ;
-expr  : expr'*'expr      			            {$$=mkOperatorNode('*',$1,$3);}
+expr     : expr'*'expr      			           {$$=mkOperatorNode('*',$1,$3);}
   ;
-expr  : '('expr')'          			        {$$=$2;}
+expr     : '('expr')'          			           {$$=$2;}
   ;
-expr  : ID                  			        {$$=mkLeafNode_Id($1);}
+expr     : ID                  			           {$$=mkLeafNode_Id($1);}
   ;
-expr  : NUM                 			        {$$=mkLeafNode_Num($1);}
+expr     : NUM                 			           {$$=mkLeafNode_Num($1);}
   ;
 %%
 
