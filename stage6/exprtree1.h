@@ -43,7 +43,16 @@ struct tree_node * mkDeclNode(char *opt,struct tree_node *right)
 struct tree_node * mkIdlistvarNode(struct tree_node *left,struct tree_node *right)
 {
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
-	root->construct="%IDLIST%";
+	root->construct="%IDLISTVAR%";
+	root->left=left;
+	root->right=right;
+	return root;
+}
+
+struct tree_node * mkIdlistarrNode(struct tree_node *left,struct tree_node *right)
+{
+	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
+	root->construct="%IDLISTARR%";
 	root->left=left;
 	root->right=right;
 	return root;
@@ -97,8 +106,23 @@ struct tree_node * mkLeafNode_Num(int num)
 
 struct tree_node * mkLeafNode_Id(char *opt)
 {
+	int i;
+	bool flag=true;
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct="%ID%";
+	for(i=0;i<keysize;i++)
+	{
+		if(strcmp(opt,keywords[i])==0)
+		{
+			flag=false;
+			break;
+		}
+	}
+	if(!flag)
+	{
+		printf("Syntax Error:Variable name %s is the Keyword in the following language\n",opt);
+		exit(1);
+	}
 	root->variable=Ginstall(opt,1,1);
 	root->left=NULL;
 	root->right=NULL;
@@ -109,6 +133,19 @@ struct tree_node * mkLeafNode_Array(char *opt,int size)
 {
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct="%IDARRAY%";
+	for(i=0;i<keysize;i++)
+	{
+		if(strcmp(opt,keywords[i])==0)
+		{
+			flag=false;
+			break;
+		}
+	}
+	if(!flag)
+	{
+		printf("Syntax Error:Array name %s is the Keyword in the following language\n",opt);
+		exit(1);
+	}
 	root->variable=Ginstall(opt,1,size);
 	root->left=NULL;
 	root->right=NULL;
@@ -155,6 +192,45 @@ struct tree_node * mkRArrNode(char *var,int loc)
 		printf("Syntax Error:Segmentation Fault\n",var);
 		exit(1);
 	}
+	root->val=loc;
+	root->variable=temp;
+	root->left=NULL;
+	root->right=NULL;
+	return root;
+}
+
+struct tree_node * ckLeafNode_Id(char *var)
+{
+	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
+	root->construct="%IDNODE%";
+	struct Gsymbol *temp=Glookup(head,var);	
+	if(temp==NULL)
+	{
+		printf("Syntax Error:Variable %s was undeclared\n",var);
+		exit(1);
+	}
+	root->variable=temp;
+	root->left=NULL;
+	root->right=NULL;
+	return root;
+}
+
+struct tree_node * ckLeafNode_Arr(char *var,int loc)
+{
+	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
+	root->construct="%ARRNODE%";
+	struct Gsymbol *temp=Glookup(head,var);	
+	if(temp==NULL)
+	{
+		printf("Syntax Error:Array %s was undeclared\n",var);
+		exit(1);
+	}
+	if(loc>=temp->size || loc<0)
+	{
+		printf("Syntax Error:Segmentation Fault\n",var);
+		exit(1);
+	}
+	root->val=loc;
 	root->variable=temp;
 	root->left=NULL;
 	root->right=NULL;

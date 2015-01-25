@@ -54,29 +54,31 @@ decllist : decl'\n'                                        {$$=$1;}
   ;
 decl     : INTEGER idlist';'                               {$$=mkDeclNode("%INTEGER%",$2);}
   ;
-idlist   : ID','idlist                                     {$$=mkIdlistvarNode($1,$3);}
+idlist   : ID','idlist                                     {$$=mkIdlistvarNode(mkLeafNode_Id($1),$3);}
   ;
-idlist   : array','idlist                                  {$$=mkIdlistarrNode($1,$3,$6);}
+idlist   : array','idlist                                  {$$=mkIdlistarrNode($1,$3);}
   ;
 idlist   : ID                                              {$$=mkLeafNode_Id($1);}
   ;
 idlist   : array                                           {$$=$1;}
   ;
+array    : ID'['NUM']'                                     {$$=mkLeafNode_Array($1,$3);}
+  ;
 Slist    : Slist Stmt          			           {$$=mkListNode($1,$2);}
   ;
 Slist    :                 			           {$$=NULL;}
   ;
-Stmt     : IF'('expr')'THEN Slist ENDIF';'                 {$$=mkCondNode("%@IF%",$3,$6);}
+Stmt     : IF'('expr')'THEN Slist ENDIF';'                 {$$=mkCondNode("%IF%",$3,$6);}
   ;
-Stmt     : WHILE'('expr')'DO Slist ENDWHILE';'             {$$=mkCondNode("%@WHILE%",$3,$6);}
+Stmt     : WHILE'('expr')'DO Slist ENDWHILE';'             {$$=mkCondNode("%WHILE%",$3,$6);}
   ;
-Stmt     : ID'='expr';'        			           {$$=mkEquNode("=",$1,$3);}
+Stmt     : ID'='expr';'        			           {$$=mkEquNode("=",ckLeafNode_Id($1),$3);}
   ; 
-Stmt     : array'='expr';'        			   {$$=mkEquNode("=",$1,$3);}
+Stmt     : ID'['NUM']''='expr';'        	           {$$=mkEquNode("=",ckLeafNode_Arr($1,$3),$6);}
   ; 
 Stmt     : READ'('ID')'';'     			           {$$=mkRNode($3);}
   ;
-Stmt     : READ'('array')'';'     		           {$$=mkRArrNode($3,$4);}
+Stmt     : READ'('ID'['NUM']'')'';'     		   {$$=mkRArrNode($3,$5);}
   ;
 Stmt     : WRITE'('expr')'';'  			           {$$=mkWNode($3);}
   ;
@@ -94,9 +96,7 @@ expr     : '('expr')'          			           {$$=$2;}
   ;
 expr     : ID                  			           {$$=ckLeafNode_Id($1);}
   ;
-expr     : array                 			   {$$=ckLeafNode_Id($1);}
-  ;
-array    : ID'['NUM']'                                     {$$=mkLeafNode_Array($1,$3);}
+expr     : ID'['NUM']'                 			   {$$=ckLeafNode_Arr($1,$3);}
   ;
 expr     : NUM                 			           {$$=mkLeafNode_Num($1);}
   ;

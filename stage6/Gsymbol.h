@@ -11,6 +11,8 @@ struct Gsymbol
 };
 
 struct Gsymbol *head=NULL;
+char keywords[11][15]={"while","do","endwhile","if","then","endif","decl","enddecl","read","write","integer"};
+int keysize=11;
 
 struct Gsymbol * Glookup(struct Gsymbol *pre,char *name)
 {
