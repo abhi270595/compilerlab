@@ -74,8 +74,6 @@ Stmt     : ID'='expr';'        			           {$$=mkEquNode('=',$1,$3);}
   ; 
 Stmt     : READ'('ID')'';'     			           {$$=mkRNode($3);}
   ;
-Stmt     : READ'('ID'['NUM']'')'';'     			           {$$=mkRArrNode($3,$4);}
-  ;
 Stmt     : WRITE'('expr')'';'  			           {$$=mkWNode($3);}
   ;
 expr     : expr'<'expr         			           {$$=mkBoolOptNode("<",$1,$3);}

@@ -131,28 +131,7 @@ struct tree_node * mkRNode(char *var)
 	struct Gsymbol *temp=Glookup(head,var);	
 	if(temp==NULL)
 	{
-		printf("Syntax Error:Variable %s was undeclared\n",var);
-		exit(1);
-	}
-	root->variable=temp;
-	root->left=NULL;
-	root->right=NULL;
-	return root;
-}
-
-struct tree_node * mkRArrNode(char *var,int loc)
-{
-	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
-	root->construct="%READARR%";
-	struct Gsymbol *temp=Glookup(head,var);	
-	if(temp==NULL)
-	{
-		printf("Syntax Error:Array %s was undeclared\n",var);
-		exit(1);
-	}
-	if(loc>=temp->size || loc<0)
-	{
-		printf("Syntax Error:Segmentation Fault\n",var);
+		printf("Syntax Error:Variable %s was undeclared",var);
 		exit(1);
 	}
 	root->variable=temp;
