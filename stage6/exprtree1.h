@@ -106,19 +106,18 @@ struct tree_node * mkLeafNode_Num(int num)
 
 struct tree_node * mkLeafNode_Id(char *opt)
 {
-	int i;
-	bool flag=true;
+	int i,flag=1;
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct="%ID%";
 	for(i=0;i<keysize;i++)
 	{
 		if(strcmp(opt,keywords[i])==0)
 		{
-			flag=false;
+			flag=0;
 			break;
 		}
 	}
-	if(!flag)
+	if(flag==0)
 	{
 		printf("Syntax Error:Variable name %s is the Keyword in the following language\n",opt);
 		exit(1);
@@ -131,17 +130,18 @@ struct tree_node * mkLeafNode_Id(char *opt)
 
 struct tree_node * mkLeafNode_Array(char *opt,int size)
 {
+	int i,flag=1;
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct="%IDARRAY%";
 	for(i=0;i<keysize;i++)
 	{
 		if(strcmp(opt,keywords[i])==0)
 		{
-			flag=false;
+			flag=0;
 			break;
 		}
 	}
-	if(!flag)
+	if(flag==0)
 	{
 		printf("Syntax Error:Array name %s is the Keyword in the following language\n",opt);
 		exit(1);
@@ -249,19 +249,19 @@ struct tree_node * mkListNode(struct tree_node *left,struct tree_node *right)
 int evaluate(struct tree_node *root)
 {
 	int retval;
-	if(root->type_opt=='@')
+	if(root->construct=="%PGM%")
 	{
 		retval=evaluate(root->left);
 		retval=evaluate(root->right);
 		return 0;
 	}
-	else if(root->construct=="IF")
+	else if(root->construct=="%IF%")
 	{
 		if(evaluate(root->left))
 			retval=evaluate(root->right);
 		return 0;
 	}
-	else if(root->construct=="WHILE")
+	else if(root->construct=="%WHILE%")
 	{
 		while(evaluate(root->left))
 			retval=evaluate(root->right);
@@ -273,13 +273,13 @@ int evaluate(struct tree_node *root)
 		return evaluate(root->left)<evaluate(root->right);
 	else if(root->construct=="==")
 		return evaluate(root->left)==evaluate(root->right);
-	else if(root->type_opt=='`')
-        return root->val;
-	else if(root->type_opt=='+')
-        return evaluate(root->left)+evaluate(root->right);
-	else if(root->type_opt=='*')
-        return evaluate(root->left)*evaluate(root->right);
-	else if(root->type_opt=='=')
+	else if(root->construct=="%NUM%")
+        	return root->val;
+	else if(root->construct=="+")
+        	return evaluate(root->left)+evaluate(root->right);
+	else if(root->construct=="*")
+        	return evaluate(root->left)*evaluate(root->right);
+	else if(root->construct=="=")
 	{
 		symbol[root->location-'a']=evaluate(root->right);
 		return 0;

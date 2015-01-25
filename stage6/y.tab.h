@@ -46,7 +46,10 @@
      ENDIF = 264,
      WHILE = 265,
      DO = 266,
-     ENDWHILE = 267
+     ENDWHILE = 267,
+     INTEGER = 268,
+     DECL = 269,
+     ENDDECL = 270
    };
 #endif
 /* Tokens.  */
@@ -60,6 +63,9 @@
 #define WHILE 265
 #define DO 266
 #define ENDWHILE 267
+#define INTEGER 268
+#define DECL 269
+#define ENDDECL 270
 
 
 
@@ -72,13 +78,13 @@ typedef union YYSTYPE
 #line 8 "slp.y"
 
 	int ival;
-	char var;
+	char *var;
 	struct tree_node *nptr;	
 
 
 
 /* Line 2068 of yacc.c  */
-#line 82 "y.tab.h"
+#line 88 "y.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

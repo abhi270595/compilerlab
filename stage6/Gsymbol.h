@@ -29,7 +29,7 @@ struct Gsymbol * Glookup(struct Gsymbol *pre,char *name)
 
 struct Gsymbol * Ginstall(char *name,int type,int size)
 {
-    if(Glookup(head)==NULL)
+    if(Glookup(head,name)==NULL)
     {
         int *arr=(int *)malloc(sizeof(int)*size);
         struct Gsymbol *temp=(struct Gsymbol *)malloc(sizeof(struct Gsymbol));

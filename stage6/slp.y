@@ -2,7 +2,6 @@
 	#include <stdio.h>
 	#include "lex.yy.c"
 	#include "exprtree1.h"
-        #include "Gsymbol.h"
 %}
 
 %union
@@ -31,6 +30,8 @@
 %type  <nptr>total
 %type  <nptr>gdecl
 %type  <nptr>decllist
+%type  <nptr>idlist
+%type  <nptr>decl
 %type  <nptr>array
 
 %left  ','
