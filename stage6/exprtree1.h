@@ -255,6 +255,12 @@ int evaluate(struct tree_node *root)
 		retval=evaluate(root->right);
 		return 0;
 	}
+	else if(root->construct=="%LIST%")
+	{
+		retval=evaluate(root->left);
+		retval=evaluate(root->right);
+		return 0;
+	}
 	else if(root->construct=="%IF%")
 	{
 		if(evaluate(root->left))
@@ -281,19 +287,31 @@ int evaluate(struct tree_node *root)
         	return evaluate(root->left)*evaluate(root->right);
 	else if(root->construct=="=")
 	{
-		symbol[root->location-'a']=evaluate(root->right);
-		return 0;
-	}	
-	else if(root->left==NULL && root->right==NULL && root->location>='a' && root->location<='z')
-	{
-		scanf("%d",&symbol[root->location-'a']);
+		if(root->left->construct=="%IDNODE%")
+			root->left->variable->binding[0]=evaluate(root->right);
+		else
+			root->left->variable->binding[root->left->val]=evaluate(root->right);
 		return 0;
 	}
-	else if(root->left!=NULL && root->right==NULL)
+	else if(root->construct=="%IDNODE%")	
+		return root->variable->binding[0];
+	else if(root->construct=="%ARRNODE%")
+		return root->variable->binding[root->val];
+	else if(root->construct=="%READ%")
+	{
+		scanf("%d",&root->variable->binding[0]);
+		return 0;
+	}
+	else if(root->construct=="%READARR%")
+	{
+		scanf("%d",&root->variable->binding[root->val]);
+		return 0;
+	}
+	else if(root->construct=="%WRITE%")
 	{
 		printf("%d\n",evaluate(root->left));
 		return 0;
 	}
-	else if(root->type_opt>='a' && root->type_opt<='z')
-		return symbol[root->type_opt-'a'];
-}
+	else
+		return 0;
+}	

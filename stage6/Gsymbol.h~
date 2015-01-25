@@ -11,12 +11,14 @@ struct Gsymbol
 };
 
 struct Gsymbol *head=NULL;
+char keywords[11][15]={"while","do","endwhile","if","then","endif","decl","enddecl","read","write","integer"};
+int keysize=11;
 
 struct Gsymbol * Glookup(struct Gsymbol *pre,char *name)
 {
     if(pre!=NULL)
     {
-        if(pre->name==name)
+        if(strcmp(pre->name,name) == 0)
             return pre;
         else
             return Glookup(pre->next,name);
@@ -27,7 +29,7 @@ struct Gsymbol * Glookup(struct Gsymbol *pre,char *name)
 
 struct Gsymbol * Ginstall(char *name,int type,int size)
 {
-    if(Glookup(head)==NULL)
+    if(Glookup(head,name)==NULL)
     {
         int *arr=(int *)malloc(sizeof(int)*size);
         struct Gsymbol *temp=(struct Gsymbol *)malloc(sizeof(struct Gsymbol));
@@ -36,6 +38,7 @@ struct Gsymbol * Ginstall(char *name,int type,int size)
         temp->size=size;
         temp->binding=arr;
         temp->next=head;
+	printf("binding %p\n",temp->binding);
         head=temp;
 	return temp;
     }

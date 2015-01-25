@@ -1572,7 +1572,7 @@ yyreduce:
 
 /* Line 1806 of yacc.c  */
 #line 80 "slp.y"
-    {(yyval.nptr)=mkRNode((yyvsp[(3) - (5)].var));}
+    {printf("yacc %s\n",(yyvsp[(3) - (5)].var)); (yyval.nptr)=mkRNode((yyvsp[(3) - (5)].var));}
     break;
 
   case 20:

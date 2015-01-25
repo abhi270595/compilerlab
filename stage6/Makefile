@@ -6,3 +6,6 @@ lex.yy.c : slp.l
 
 y.tab.c : slp.y
 	yacc -d slp.y
+
+clean:
+	$(RM) y.tab.* slp lex.yy.c

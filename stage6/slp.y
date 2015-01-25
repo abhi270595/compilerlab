@@ -77,7 +77,7 @@ Stmt     : ID'='expr';'        			           {$$=mkEquNode("=",ckLeafNode_Id($1)
   ; 
 Stmt     : ID'['NUM']''='expr';'        	           {$$=mkEquNode("=",ckLeafNode_Arr($1,$3),$6);}
   ; 
-Stmt     : READ'('ID')'';'     			           {$$=mkRNode($3);}
+Stmt     : READ '(' ID ')' ';'     		           {printf("yacc %s\n",$3); $$=mkRNode($3);}
   ;
 Stmt     : READ'('ID'['NUM']'')'';'     		   {$$=mkRArrNode($3,$5);}
   ;

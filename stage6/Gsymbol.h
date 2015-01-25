@@ -18,7 +18,7 @@ struct Gsymbol * Glookup(struct Gsymbol *pre,char *name)
 {
     if(pre!=NULL)
     {
-        if(pre->name==name)
+        if(strcmp(pre->name,name) == 0)
             return pre;
         else
             return Glookup(pre->next,name);
@@ -38,6 +38,7 @@ struct Gsymbol * Ginstall(char *name,int type,int size)
         temp->size=size;
         temp->binding=arr;
         temp->next=head;
+	printf("binding %p %d\n",temp->binding,temp->binding[size-1]);
         head=temp;
 	return temp;
     }
