@@ -66,9 +66,9 @@ Slist    : Slist Stmt          			           {$$=mkListNode($1,$2);}
   ;
 Slist    :                 			           {$$=NULL;}
   ;
-Stmt     : IF'('expr')'THEN Slist ENDIF';'                 {$$=mkCondNode("IF",$3,$6);}
+Stmt     : IF'('expr')'THEN Slist ENDIF';'                 {$$=mkCondNode("%@IF%",$3,$6);}
   ;
-Stmt     : WHILE'('expr')'DO Slist ENDWHILE';'             {$$=mkCondNode("WHILE",$3,$6);}
+Stmt     : WHILE'('expr')'DO Slist ENDWHILE';'             {$$=mkCondNode("%@WHILE%",$3,$6);}
   ;
 Stmt     : ID'='expr';'        			           {$$=mkEquNode("=",$1,$3);}
   ; 
