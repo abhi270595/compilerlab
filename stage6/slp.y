@@ -67,7 +67,7 @@ array    : ID'['NUM']'                                     {$$=mkLeafNode_Array(
   ;
 Slist    : Slist Stmt          			           {$$=mkListNode($1,$2);}
   ;
-Slist    :                 			           {$$=NULL;}
+Slist    : Stmt            			           {$$=$1;}
   ;
 Stmt     : IF'('expr')'THEN Slist ENDIF';'                 {$$=mkCondNode("%IF%",$3,$6);}
   ;
@@ -79,7 +79,7 @@ Stmt     : ID'['NUM']''='expr';'        	           {$$=mkEquNode("=",ckLeafNode
   ; 
 Stmt     : READ '(' ID ')' ';'     		           {printf("yacc %s\n",$3); $$=mkRNode($3);}
   ;
-Stmt     : READ'('ID'['NUM']'')'';'     		   {$$=mkRArrNode($3,$5);}
+Stmt     : READ'('ID'['expr']'')'';'     		   {$$=mkRArrNode($3,$5);}
   ;
 Stmt     : WRITE'('expr')'';'  			           {$$=mkWNode($3);}
   ;

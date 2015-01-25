@@ -1,5 +1,5 @@
 slp: y.tab.c lex.yy.c
-	gcc -o slp y.tab.c -ll
+	gcc -g -o slp y.tab.c -ll
 
 lex.yy.c : slp.l
 	lex slp.l

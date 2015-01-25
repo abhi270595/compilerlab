@@ -177,7 +177,7 @@ struct tree_node * mkRNode(char *var)
 	return root;
 }
 
-struct tree_node * mkRArrNode(char *var,int loc)
+struct tree_node * mkRArrNode(char *var,struct tree_node *right)
 {
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct="%READARR%";
@@ -187,15 +187,9 @@ struct tree_node * mkRArrNode(char *var,int loc)
 		printf("Syntax Error:Array %s was undeclared\n",var);
 		exit(1);
 	}
-	if(loc>=temp->size || loc<0)
-	{
-		printf("Syntax Error:Segmentation Fault\n",var);
-		exit(1);
-	}
-	root->val=loc;
 	root->variable=temp;
 	root->left=NULL;
-	root->right=NULL;
+	root->right=right;
 	return root;
 }
 
@@ -304,7 +298,14 @@ int evaluate(struct tree_node *root)
 	}
 	else if(root->construct=="%READARR%")
 	{
-		scanf("%d",&root->variable->binding[root->val]);
+		retval=evaluate(root->right);
+		if(retval<0 || retval>=root->variable->size)
+		{
+			printf("Parsing Error: Segmentation Fault Core Dumped\n");
+			exit(1);
+		}
+		else
+			scanf("%d",&root->variable->binding[retval]);
 		return 0;
 	}
 	else if(root->construct=="%WRITE%")
