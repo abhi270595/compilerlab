@@ -827,7 +827,7 @@ YY_RULE_SETUP
 case 13:
 YY_RULE_SETUP
 #line 24 "slp.l"
-{printf("lex %s\n",yytext); yylval.var = strdup(yytext) ; return ID;}
+{yylval.var = strdup(yytext) ; return ID;}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP

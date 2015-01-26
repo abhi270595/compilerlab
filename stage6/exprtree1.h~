@@ -209,7 +209,7 @@ struct tree_node * ckLeafNode_Id(char *var)
 	return root;
 }
 
-struct tree_node * ckLeafNode_Arr(char *var,int loc)
+struct tree_node * ckLeafNode_Arr(char *var,struct tree_node *right)
 {
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct="%ARRNODE%";
@@ -219,15 +219,9 @@ struct tree_node * ckLeafNode_Arr(char *var,int loc)
 		printf("Syntax Error:Array %s was undeclared\n",var);
 		exit(1);
 	}
-	if(loc>=temp->size || loc<0)
-	{
-		printf("Syntax Error:Segmentation Fault\n",var);
-		exit(1);
-	}
-	root->val=loc;
 	root->variable=temp;
 	root->left=NULL;
-	root->right=NULL;
+	root->right=right;
 	return root;
 }
 
@@ -240,10 +234,25 @@ struct tree_node * mkListNode(struct tree_node *left,struct tree_node *right)
 	return root;
 }
 
+struct tree_node * mkLinesNode(struct tree_node *left,struct tree_node *right)
+{
+	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
+	root->construct="%LINES%";
+	root->left=left;
+	root->right=right;
+	return root;
+}
+
 int evaluate(struct tree_node *root)
 {
 	int retval;
 	if(root->construct=="%PGM%")
+	{
+		retval=evaluate(root->left);
+		retval=evaluate(root->right);
+		return 0;
+	}
+	else if(root->construct=="%LINES%")
 	{
 		retval=evaluate(root->left);
 		retval=evaluate(root->right);
@@ -284,13 +293,31 @@ int evaluate(struct tree_node *root)
 		if(root->left->construct=="%IDNODE%")
 			root->left->variable->binding[0]=evaluate(root->right);
 		else
-			root->left->variable->binding[root->left->val]=evaluate(root->right);
+		{
+			retval=evaluate(root->left->right);
+			if(retval<0 || retval>=root->left->variable->size)
+			{
+				printf("Parsing Error: Segmentation Fault Core Dumped\n");
+				exit(1);
+			}
+			else
+				root->left->variable->binding[retval]=evaluate(root->right);
+		}
 		return 0;
 	}
 	else if(root->construct=="%IDNODE%")	
 		return root->variable->binding[0];
 	else if(root->construct=="%ARRNODE%")
-		return root->variable->binding[root->val];
+	{
+		retval=evaluate(root->right);
+		if(retval<0 || retval>=root->variable->size)
+		{
+			printf("Parsing Error: Segmentation Fault Core Dumped\n");
+			exit(1);
+		}
+		else
+			return root->variable->binding[retval];
+	}		
 	else if(root->construct=="%READ%")
 	{
 		scanf("%d",&root->variable->binding[0]);

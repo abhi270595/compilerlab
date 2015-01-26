@@ -38,7 +38,6 @@ struct Gsymbol * Ginstall(char *name,int type,int size)
         temp->size=size;
         temp->binding=arr;
         temp->next=head;
-	printf("binding %p %d\n",temp->binding,temp->binding[size-1]);
         head=temp;
 	return temp;
     }
