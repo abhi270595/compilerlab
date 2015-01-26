@@ -33,7 +33,6 @@
 %type  <nptr>idlist
 %type  <nptr>decl
 %type  <nptr>array
-%type  <nptr>lines
 
 %left  ','
 %right '='
@@ -46,13 +45,13 @@
 %%
 pgm      : total           			           {evaluate($1); exit(0);}
   ;
-total    : gdecl lines                                     {$$=mkPgmNode($1,$2);}
+total    : gdecl Slist                                     {$$=mkPgmNode($1,$2);}
   ;
-gdecl    : DECL'\n'decllist ENDDECL'\n'                    {$$=$3;}
+gdecl    : DECL decllist ENDDECL                           {$$=$2;}
   ;
-decllist : decl'\n'decllist                                {$$=mkDecllistNode($1,$3);}
+decllist : decl decllist                                   {$$=mkDecllistNode($1,$2);}
   ;
-decllist : decl'\n'                                        {$$=$1;}
+decllist : decl                                            {$$=$1;}
   ;
 decl     : INTEGER idlist';'                               {$$=mkDeclNode("%INTEGER%",$2);}
   ;
@@ -65,10 +64,6 @@ idlist   : ID                                              {$$=mkLeafNode_Id($1)
 idlist   : array                                           {$$=$1;}
   ;
 array    : ID'['NUM']'                                     {$$=mkLeafNode_Array($1,$3);}
-  ;
-lines    : lines Slist'\n'                                 {$$=mkLinesNode($1,$2);}
-  ;
-lines    : Slist'\n'                                       {$$=$1;}
   ;
 Slist    : Slist Stmt          			           {$$=mkListNode($1,$2);}
   ;
@@ -96,6 +91,12 @@ expr     : expr'=''='expr      			           {$$=mkBoolOptNode("==",$1,$4);}
   ;
 expr     : expr'+'expr         		        	   {$$=mkOperatorNode("+",$1,$3);}
   ;
+expr     : expr'-'expr         		        	   {$$=mkOperatorNode("-",$1,$3);}
+  ;
+expr     : expr'/'expr         		        	   {$$=mkOperatorNode("/",$1,$3);}
+  ;
+expr     : expr'%'expr         		        	   {$$=mkOperatorNode("%",$1,$3);}
+  ;
 expr     : expr'*'expr      			           {$$=mkOperatorNode("*",$1,$3);}
   ;
 expr     : '('expr')'          			           {$$=$2;}
@@ -111,7 +112,15 @@ expr     : NUM                 			           {$$=mkLeafNode_Num($1);}
 yyerror()
 {printf("Syntax Error!\n");}
 
-int main(void)
+int main(int argc,char *argv[])
 {
-	return yyparse();
+	if(argc>=2)
+	{
+		yyin=fopen(argv[1],"r");
+		yyparse();
+		fclose(yyin);
+	}
+	else
+		return yyparse();	
+	return 0;
 }

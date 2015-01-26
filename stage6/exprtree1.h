@@ -234,25 +234,10 @@ struct tree_node * mkListNode(struct tree_node *left,struct tree_node *right)
 	return root;
 }
 
-struct tree_node * mkLinesNode(struct tree_node *left,struct tree_node *right)
-{
-	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
-	root->construct="%LINES%";
-	root->left=left;
-	root->right=right;
-	return root;
-}
-
 int evaluate(struct tree_node *root)
 {
 	int retval;
 	if(root->construct=="%PGM%")
-	{
-		retval=evaluate(root->left);
-		retval=evaluate(root->right);
-		return 0;
-	}
-	else if(root->construct=="%LINES%")
 	{
 		retval=evaluate(root->left);
 		retval=evaluate(root->right);
@@ -288,6 +273,12 @@ int evaluate(struct tree_node *root)
         	return evaluate(root->left)+evaluate(root->right);
 	else if(root->construct=="*")
         	return evaluate(root->left)*evaluate(root->right);
+	else if(root->construct=="-")
+        	return evaluate(root->left)-evaluate(root->right);
+	else if(root->construct=="/")
+        	return evaluate(root->left)/evaluate(root->right);
+	else if(root->construct=="%")
+        	return evaluate(root->left)%evaluate(root->right);
 	else if(root->construct=="=")
 	{
 		if(root->left->construct=="%IDNODE%")
