@@ -24,6 +24,7 @@
 %token <nptr>INTEGER
 %token <nptr>DECL
 %token <nptr>ENDDECL
+%token <var> EQUAL
 %type  <nptr>Slist
 %type  <nptr>Stmt
 %type  <nptr>expr
@@ -36,13 +37,14 @@
 
 %left  ','
 %right '='
-%left  "=="
+%left  EQUAL
 %left  '<' '>'
 %left  '+' '-'
 %left  '*' '/' '%'
 %left  '(' ')' '[' ']'
 
 %%
+
 pgm      : total           			           {evaluate($1); exit(0);}
   ;
 total    : gdecl Slist                                     {$$=mkPgmNode($1,$2);}
@@ -87,7 +89,7 @@ expr     : expr'<'expr         			           {$$=mkBoolOptNode("<",$1,$3);}
   ;
 expr     : expr'>'expr         			           {$$=mkBoolOptNode(">",$1,$3);}
   ;
-expr     : expr'=''='expr      			           {$$=mkBoolOptNode("==",$1,$4);}
+expr     : expr EQUAL expr      			   {$$=mkBoolOptNode("==",$1,$3);}
   ;
 expr     : expr'+'expr         		        	   {$$=mkOperatorNode("+",$1,$3);}
   ;
@@ -107,10 +109,11 @@ expr     : ID'['expr']'                 	           {$$=ckLeafNode_Arr($1,$3);}
   ;
 expr     : NUM                 			           {$$=mkLeafNode_Num($1);}
   ;
+
 %%
 
 yyerror()
-{printf("Syntax Error!\n");}
+{printf("Syntax Error!\n"); exit(1);}
 
 int main(int argc,char *argv[])
 {

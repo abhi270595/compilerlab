@@ -49,7 +49,8 @@
      ENDWHILE = 267,
      INTEGER = 268,
      DECL = 269,
-     ENDDECL = 270
+     ENDDECL = 270,
+     EQUAL = 271
    };
 #endif
 /* Tokens.  */
@@ -66,6 +67,7 @@
 #define INTEGER 268
 #define DECL 269
 #define ENDDECL 270
+#define EQUAL 271
 
 
 
@@ -84,7 +86,7 @@ typedef union YYSTYPE
 
 
 /* Line 2068 of yacc.c  */
-#line 88 "y.tab.h"
+#line 90 "y.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

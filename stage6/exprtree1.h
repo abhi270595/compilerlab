@@ -237,51 +237,51 @@ struct tree_node * mkListNode(struct tree_node *left,struct tree_node *right)
 int evaluate(struct tree_node *root)
 {
 	int retval;
-	if(root->construct=="%PGM%")
+	if(strcmp(root->construct,"%PGM%")==0)
 	{
 		retval=evaluate(root->left);
 		retval=evaluate(root->right);
 		return 0;
 	}
-	else if(root->construct=="%LIST%")
+	else if(strcmp(root->construct,"%LIST%")==0)
 	{
 		retval=evaluate(root->left);
 		retval=evaluate(root->right);
 		return 0;
 	}
-	else if(root->construct=="%IF%")
+	else if(strcmp(root->construct,"%IF%")==0)
 	{
 		if(evaluate(root->left))
 			retval=evaluate(root->right);
 		return 0;
 	}
-	else if(root->construct=="%WHILE%")
+	else if(strcmp(root->construct,"%WHILE%")==0)
 	{
 		while(evaluate(root->left))
 			retval=evaluate(root->right);
 		return 0;
 	}
-	else if(root->construct==">")
+	else if(strcmp(root->construct,">")==0)
 		return evaluate(root->left)>evaluate(root->right);
-	else if(root->construct=="<")
+	else if(strcmp(root->construct,"<")==0)
 		return evaluate(root->left)<evaluate(root->right);
-	else if(root->construct=="==")
+	else if(strcmp(root->construct,"==")==0)
 		return evaluate(root->left)==evaluate(root->right);
-	else if(root->construct=="%NUM%")
+	else if(strcmp(root->construct,"%NUM%")==0)
         	return root->val;
-	else if(root->construct=="+")
+	else if(strcmp(root->construct,"+")==0)
         	return evaluate(root->left)+evaluate(root->right);
-	else if(root->construct=="*")
+	else if(strcmp(root->construct,"*")==0)
         	return evaluate(root->left)*evaluate(root->right);
-	else if(root->construct=="-")
+	else if(strcmp(root->construct,"-")==0)
         	return evaluate(root->left)-evaluate(root->right);
-	else if(root->construct=="/")
+	else if(strcmp(root->construct,"/")==0)
         	return evaluate(root->left)/evaluate(root->right);
-	else if(root->construct=="%")
+	else if(strcmp(root->construct,"%")==0)
         	return evaluate(root->left)%evaluate(root->right);
-	else if(root->construct=="=")
+	else if(strcmp(root->construct,"=")==0)
 	{
-		if(root->left->construct=="%IDNODE%")
+		if(strcmp(root->left->construct,"%IDNODE%")==0)
 			root->left->variable->binding[0]=evaluate(root->right);
 		else
 		{
@@ -296,9 +296,9 @@ int evaluate(struct tree_node *root)
 		}
 		return 0;
 	}
-	else if(root->construct=="%IDNODE%")	
+	else if(strcmp(root->construct,"%IDNODE%")==0)	
 		return root->variable->binding[0];
-	else if(root->construct=="%ARRNODE%")
+	else if(strcmp(root->construct,"%ARRNODE%")==0)
 	{
 		retval=evaluate(root->right);
 		if(retval<0 || retval>=root->variable->size)
@@ -309,12 +309,12 @@ int evaluate(struct tree_node *root)
 		else
 			return root->variable->binding[retval];
 	}		
-	else if(root->construct=="%READ%")
+	else if(strcmp(root->construct,"%READ%")==0)
 	{
 		scanf("%d",&root->variable->binding[0]);
 		return 0;
 	}
-	else if(root->construct=="%READARR%")
+	else if(strcmp(root->construct,"%READARR%")==0)
 	{
 		retval=evaluate(root->right);
 		if(retval<0 || retval>=root->variable->size)
@@ -326,7 +326,7 @@ int evaluate(struct tree_node *root)
 			scanf("%d",&root->variable->binding[retval]);
 		return 0;
 	}
-	else if(root->construct=="%WRITE%")
+	else if(strcmp(root->construct,"%WRITE%")==0)
 	{
 		printf("%d\n",evaluate(root->left));
 		return 0;

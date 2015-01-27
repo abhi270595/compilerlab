@@ -22,8 +22,10 @@ decl                   {return DECL;}
 enddecl                {return ENDDECL;}
 integer                {return INTEGER;}
 [a-zA-Z][a-zA-Z0-9]*   {yylval.var = strdup(yytext) ; return ID;}
+==                     {return EQUAL;}
 [ \t\n]      	       {}
-.                      {return *yytext;}
+[-+*/=,<>;()\[\]%]     {return *yytext;}
+.                      {printf("LEXICAL ERROR!\n"); exit(1);}
 
 %%
 
