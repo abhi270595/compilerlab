@@ -1,3 +1,6 @@
+// INTEGER 2
+// BOOLEAN 1
+
 #include<stdio.h>
 #include<stdlib.h>
 

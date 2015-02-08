@@ -7,6 +7,7 @@ int symbol[26];
 struct tree_node
 {
 	int val;
+    char *type;
 	struct Gsymbol *variable;
 	char *construct;
 	struct tree_node *left;
@@ -17,6 +18,7 @@ struct tree_node * mkPgmNode(struct tree_node *left,struct tree_node *right)
 {
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct="%PGM%";
+    root->type="%VOID%";
 	root->left=left;
 	root->right=right;
 	return root;
@@ -26,6 +28,7 @@ struct tree_node * mkDecllistNode(struct tree_node *left,struct tree_node *right
 {
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct="%DECLLIST%";
+    root->type="%VOID%";
 	root->left=left;
 	root->right=right;
 	return root;
@@ -35,24 +38,27 @@ struct tree_node * mkDeclNode(char *opt,struct tree_node *right)
 {
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct=opt;
+    root->type=opt;
 	root->left=NULL;
 	root->right=right;
 	return root;
 }
 
-struct tree_node * mkIdlistvarNode(struct tree_node *left,struct tree_node *right)
+struct tree_node * mkIdlistvarNode(struct tree_node *left,struct tree_node *right,char *type)
 {
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct="%IDLISTVAR%";
+    root->type=type;
 	root->left=left;
 	root->right=right;
 	return root;
 }
 
-struct tree_node * mkIdlistarrNode(struct tree_node *left,struct tree_node *right)
+struct tree_node * mkIdlistarrNode(struct tree_node *left,struct tree_node *right,char *type)
 {
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct="%IDLISTARR%";
+    root->type=type;
 	root->left=left;
 	root->right=right;
 	return root;
@@ -62,8 +68,14 @@ struct tree_node * mkCondNode(char *opt,struct tree_node *left,struct tree_node 
 {
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct=opt;
+    root->type="%VOID%";
 	root->left=left;
 	root->right=right;
+    if(root->left->type!="%BOOLEAN%")
+    {
+        printf("Syntax Error: Invalid Type for the Condition Argument\n");
+        exit(1);
+    }
 	return root;
 }
 
@@ -73,6 +85,13 @@ struct tree_node * mkBoolOptNode(char *opt,struct tree_node *left,struct tree_no
 	root->construct=opt;
 	root->left=left;
 	root->right=right;
+    if(root->left->type=="%BOOLEAN%" || root->right->type=="%BOOLEAN%")
+    {
+        printf("Syntax Error: Invalid Type of Oprands to a Boolean Operator %s\n",opt);
+        exit(1);
+    }
+    else
+        root->type="%BOOLEAN%";
 	return root;
 }
 
@@ -82,6 +101,13 @@ struct tree_node * mkOperatorNode(char *opt,struct tree_node *left,struct tree_n
 	root->construct=opt;
 	root->left=left;
 	root->right=right;
+    if(root->left->type=="%BOOLEAN%" || root->right->type=="%BOOLEAN%")
+    {
+        printf("Syntax Error: Invalid Type of Oprands to a Arithmetic Operator %s\n",opt);
+        exit(1);
+    }
+    else
+        root->type="%INTEGER%";
 	return root;
 }
 
@@ -91,6 +117,13 @@ struct tree_node * mkEquNode(char *opt,struct tree_node *left,struct tree_node *
 	root->construct=opt;
 	root->left=left;
 	root->right=right;
+    if((root->left->type=="%BOOLEAN%" && root->right->type!="%BOOLEAN%") || (root->left->type=="%INTEGER%" && root->right->type!="%INTEGER%"))
+    {
+        printf("Syntax Error: An Boolean Variable Cannot be assigned to an Arithmetic Expression\n");
+        exit(1);
+    }
+    else
+        root->type="%VOID%";
 	return root;
 }
 
@@ -101,10 +134,25 @@ struct tree_node * mkLeafNode_Num(int num)
 	root->val=num;
 	root->left=NULL;
 	root->right=NULL;
+    root->type="%INTEGER%";
 	return root;
 }
 
-struct tree_node * mkLeafNode_Id(char *opt)
+struct tree_node * mkLeafNode_Bool(char *value)
+{
+	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
+	root->construct="%BOOL%";
+	if(strcmp(value,"TRUE") == 0)
+        root->val=1;
+    else
+        root->val=0;
+	root->left=NULL;
+	root->right=NULL;
+    root->type="%BOOLEAN%";
+	return root;
+}
+
+struct tree_node * mkLeafNode_Id(char *opt,char *type)
 {
 	int i,flag=1;
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
@@ -122,13 +170,23 @@ struct tree_node * mkLeafNode_Id(char *opt)
 		printf("Syntax Error:Variable name %s is the Keyword in the following language\n",opt);
 		exit(1);
 	}
-	root->variable=Ginstall(opt,1,1,"%ID%");
+    if(strcmp(type,"%INTEGER%") == 0)
+    {
+        root->val=2;
+        root->type="%INTEGER%";
+    }
+    else if(strcmp(type,"%BOOLEAN%") == 0)
+    {
+        root->val=1;
+        root->type="%BOOLEAN%";
+    }
+	root->variable=Ginstall(opt,root->val,1,"%ID%");
 	root->left=NULL;
 	root->right=NULL;
 	return root;
 }
 
-struct tree_node * mkLeafNode_Array(char *opt,int size)
+struct tree_node * mkLeafNode_Array(char *opt,int size,char *type)
 {
 	int i,flag=1;
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
@@ -146,7 +204,17 @@ struct tree_node * mkLeafNode_Array(char *opt,int size)
 		printf("Syntax Error:Array name %s is the Keyword in the following language\n",opt);
 		exit(1);
 	}
-	root->variable=Ginstall(opt,1,size,"%ARR%");
+    if(strcmp(type,"%INTEGER%") == 0)
+    {
+        root->val=2;
+        root->type="%INTEGER%";
+    }
+    else if(strcmp(type,"%BOOLEAN%") == 0)
+    {
+        root->val=1;
+        root->type="%BOOLEAN%";
+    }
+	root->variable=Ginstall(opt,root->val,size,"%ARR%");
 	root->left=NULL;
 	root->right=NULL;
 	return root;
@@ -158,6 +226,7 @@ struct tree_node * mkWNode(struct tree_node *left)
 	root->construct="%WRITE%";
 	root->left=left;
 	root->right=NULL;
+    root->type="%VOID%";
 	return root;
 }
 
@@ -174,6 +243,7 @@ struct tree_node * mkRNode(char *var)
 	root->variable=temp;
 	root->left=NULL;
 	root->right=NULL;
+    root->type="%VOID%";
 	return root;
 }
 
@@ -190,6 +260,7 @@ struct tree_node * mkRArrNode(char *var,struct tree_node *right)
 	root->variable=temp;
 	root->left=NULL;
 	root->right=right;
+    root->type="%VOID%";
 	return root;
 }
 
@@ -204,6 +275,10 @@ struct tree_node * ckLeafNode_Id(char *var)
 		exit(1);
 	}
 	root->variable=temp;
+    if(root->variable->type==2)
+        root->type="%INTEGER%";
+    else
+        root->type="%BOOLEAN%";
 	root->left=NULL;
 	root->right=NULL;
 	return root;
@@ -220,6 +295,10 @@ struct tree_node * ckLeafNode_Arr(char *var,struct tree_node *right)
 		exit(1);
 	}
 	root->variable=temp;
+    if(root->variable->type==2)
+        root->type="%INTEGER%";
+    else
+        root->type="%BOOLEAN%";
 	root->left=NULL;
 	root->right=right;
 	return root;
@@ -231,6 +310,7 @@ struct tree_node * mkListNode(struct tree_node *left,struct tree_node *right)
 	root->construct="%LIST%";
 	root->left=left;
 	root->right=right;
+    root->type="%VOID%";
 	return root;
 }
 
@@ -260,14 +340,22 @@ int evaluate(struct tree_node *root)
 		while(evaluate(root->left))
 			retval=evaluate(root->right);
 		return 0;
-	}
+	} 
 	else if(strcmp(root->construct,">")==0)
-		return evaluate(root->left)>evaluate(root->right);
+        return evaluate(root->left)>evaluate(root->right);
 	else if(strcmp(root->construct,"<")==0)
 		return evaluate(root->left)<evaluate(root->right);
 	else if(strcmp(root->construct,"==")==0)
 		return evaluate(root->left)==evaluate(root->right);
+	else if(strcmp(root->construct,">=")==0)
+		return evaluate(root->left)>=evaluate(root->right);
+	else if(strcmp(root->construct,"<=")==0)
+		return evaluate(root->left)<=evaluate(root->right);
+	else if(strcmp(root->construct,"!=")==0)
+		return evaluate(root->left)!=evaluate(root->right); 
 	else if(strcmp(root->construct,"%NUM%")==0)
+        	return root->val;
+	else if(strcmp(root->construct,"%BOOL%")==0)
         	return root->val;
 	else if(strcmp(root->construct,"+")==0)
         	return evaluate(root->left)+evaluate(root->right);
@@ -303,7 +391,7 @@ int evaluate(struct tree_node *root)
 		retval=evaluate(root->right);
 		if(retval<0 || retval>=root->variable->size)
 		{
-			printf("Parsing Error: Segmentation Fault Core Dumped\n");
+			printf("Syntax Error: Segmentation Fault Core Dumped\n");
 			exit(1);
 		}
 		else
@@ -319,7 +407,7 @@ int evaluate(struct tree_node *root)
 		retval=evaluate(root->right);
 		if(retval<0 || retval>=root->variable->size)
 		{
-			printf("Parsing Error: Segmentation Fault Core Dumped\n");
+			printf("Syntax Error: Segmentation Fault Core Dumped\n");
 			exit(1);
 		}
 		else
