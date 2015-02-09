@@ -22,7 +22,7 @@ struct Gsymbol * Glookup(struct Gsymbol *pre,char *name,char *id_type)
 {
     if(pre!=NULL)
     {
-        if(strcmp(pre->name,name) == 0 && strcmp(pre->id_type,id_type) == 0)
+        if(strcmp(pre->name,name) == 0)
             return pre;
         else
             return Glookup(pre->next,name,id_type);

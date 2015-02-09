@@ -1,0 +1,37 @@
+decl
+	integer i, j, tmp, n, a[100],a; 
+enddecl
+
+read(n);
+
+i = 0;
+while (i < n)
+do
+	read(a[i]);
+	i = i + 1;
+    a=1;
+endwhile;
+
+i = 0;
+while (i < n)
+do
+	j = 0;
+	while (j < (n-1))
+	do
+		if (a[j] > a[j+1])
+		then
+			tmp = a[j];
+			a[j] = a[j+1];
+			a[j+1] = tmp;
+		endif;
+		j = j + 1;
+	endwhile;
+	i = i + 1;
+endwhile;
+
+i = 0;
+while (i < n)
+do
+	write(a[i]);
+	i = i + 1;
+endwhile;

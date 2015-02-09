@@ -257,6 +257,11 @@ struct tree_node * mkRArrNode(char *var,struct tree_node *right)
 		printf("Syntax Error:Array %s was undeclared\n",var);
 		exit(1);
 	}
+    if(right->type=="%BOOLEAN%")
+    {
+        printf("Syntax Error:Array index cannot be of Boolean type\n");
+        exit(1);
+    }
 	root->variable=temp;
 	root->left=NULL;
 	root->right=right;
@@ -294,6 +299,11 @@ struct tree_node * ckLeafNode_Arr(char *var,struct tree_node *right)
 		printf("Syntax Error:Array %s was undeclared\n",var);
 		exit(1);
 	}
+    if(right->type=="%BOOLEAN%")
+    {
+        printf("Syntax Error:Array index cannot be of Boolean Type\n");
+        exit(1);
+    }
 	root->variable=temp;
     if(root->variable->type==2)
         root->type="%INTEGER%";
