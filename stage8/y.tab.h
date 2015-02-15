@@ -89,7 +89,7 @@ typedef union YYSTYPE
 {
 
 /* Line 2068 of yacc.c  */
-#line 8 "slp.y"
+#line 10 "slp.y"
 
 	int ival;
 	char *var;

@@ -1,5 +1,5 @@
 decl
-	integer i, j, tmp, n, a[100],a; 
+	integer i, j, tmp, n, a[100]; 
 enddecl
 
 read(n);
@@ -9,7 +9,6 @@ while (i < n)
 do
 	read(a[i]);
 	i = i + 1;
-    a=1;
 endwhile;
 
 i = 0;

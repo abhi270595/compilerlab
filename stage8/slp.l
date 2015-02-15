@@ -5,6 +5,8 @@
 	extern YYSTYPE yylval;
 %}
 
+%option yylineno
+
 digit [0-9]
 
 %%
@@ -31,7 +33,7 @@ integer                {return INTEGER;}
 "!="                   {return NE;}
 [ \t\n]      	       {}
 [-+*/=,<>;()\[\]%]     {return *yytext;}
-.                      {printf("LEXICAL ERROR!\n"); exit(1);}
+.                      {printf("LEXICAL ERROR:Line No-%d\n",yylineno); exit(1);}
 
 %%
 

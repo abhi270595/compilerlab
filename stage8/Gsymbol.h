@@ -4,6 +4,8 @@
 #include<stdio.h>
 #include<stdlib.h>
 
+extern yylineno;
+
 struct Gsymbol
 {
     char *name;
@@ -15,8 +17,6 @@ struct Gsymbol
 };
 
 struct Gsymbol *head=NULL;
-char keywords[11][15]={"while","do","endwhile","if","then","endif","decl","enddecl","read","write","integer"};
-int keysize=11;
 
 struct Gsymbol * Glookup(struct Gsymbol *pre,char *name,char *id_type)
 {
@@ -31,7 +31,7 @@ struct Gsymbol * Glookup(struct Gsymbol *pre,char *name,char *id_type)
         return NULL;
 }
 
-struct Gsymbol * Ginstall(char *name,int type,int size,char *id_type)
+void Ginstall(char *name,int type,int size,char *id_type)
 {
     if(Glookup(head,name,id_type)==NULL)
     {
@@ -44,11 +44,10 @@ struct Gsymbol * Ginstall(char *name,int type,int size,char *id_type)
         temp->binding=arr;
         temp->next=head;
         head=temp;
-    	return temp;
     }
     else
     {
-        printf("Duplicating Name for Variables\n");
+        printf("Syntax Error:Line No-%d, Duplicating Name for Variables\n",yylineno);
         exit(1);
     }
 }

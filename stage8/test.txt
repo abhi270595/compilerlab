@@ -1,11 +1,8 @@
 decl
-    integer i,j,arr[10];
+    integer i,j;
     boolean check;
-    integer lol;
 enddecl
 i=2;
-lol=1;
-arr[lol]=0;
 while(i<101)do 
     j=2;
     check=TRUE;
