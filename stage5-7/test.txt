@@ -1,0 +1,19 @@
+decl
+    integer i,j;
+    boolean check;
+enddecl
+i=2;
+while(i<101)do 
+    j=2;
+    check=TRUE;
+    while(j<i)do
+        if(i%j==0)then
+            check=FALSE;
+        endif;
+        j=j+1;
+    endwhile;
+    if(check)then
+        write(i);
+    endif;
+    i=i+1; 
+endwhile; 
