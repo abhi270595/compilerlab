@@ -382,9 +382,9 @@ int evaluate(struct tree_node *root)
 		}
 		else
 		{
-			printf("MOV R%d, %d\n",pre_reg,root->left->variable->binding);
-			pre_reg+=1;
 			retval=evaluate(root->left->right);
+			pre_reg+=1;
+			printf("MOV R%d, %d\n",pre_reg,root->left->variable->binding);
 			pre_reg-=1;
 			printf("ADD R%d, R%d\n",pre_reg,pre_reg+1);
 			pre_reg+=1;
@@ -410,9 +410,9 @@ int evaluate(struct tree_node *root)
 	}
 	else if(strcmp(root->construct,"%ARRNODE%")==0)
 	{
-		printf("MOV R%d, %d\n",pre_reg,root->variable->binding);
-		pre_reg+=1;
 		retval=evaluate(root->right);
+		pre_reg+=1;
+		printf("MOV R%d, %d\n",pre_reg,root->variable->binding);
 		pre_reg-=1;
 		printf("ADD R%d, R%d\n",pre_reg,pre_reg+1);
 		printf("MOV R%d, [R%d]\n",pre_reg,pre_reg);
