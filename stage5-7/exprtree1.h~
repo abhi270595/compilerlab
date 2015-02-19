@@ -18,6 +18,7 @@ struct tree_node
 
 int reg_in_use[8]={0};
 int pre_reg=0;
+int label=1;
 
 struct tree_node * mkPgmNode(struct tree_node *left,struct tree_node *right)
 {
@@ -221,7 +222,7 @@ struct tree_node * mkListNode(struct tree_node *left,struct tree_node *right)
 
 int evaluate(struct tree_node *root)
 {
-	int retval;
+	int retval,loclabel;
 	if(strcmp(root->construct,"%PGM%")==0)
 	{
 		printf("START\n");
@@ -237,28 +238,86 @@ int evaluate(struct tree_node *root)
 	}
 	else if(strcmp(root->construct,"%IF%")==0)
 	{
-		if(evaluate(root->left))
-			retval=evaluate(root->right);
+		retval=evaluate(root->left);
+		printf("JZ R%d, L%d\n",pre_reg,label);
+		loclabel=label;
+		label+=1;
+		reg_in_use[pre_reg]=0;
+		retval=evaluate(root->right);		
+		printf("L%d: ",loclabel);
+		//if(evaluate(root->left))
+		//	retval=evaluate(root->right);
 		return 0;
 	}
 	else if(strcmp(root->construct,"%WHILE%")==0)
 	{
-		while(evaluate(root->left))
-			retval=evaluate(root->right);
+		printf("L%d: ",label);
+		retval=evaluate(root->left);
+		printf("JZ R%d, L%d\n",pre_reg,label+1);
+		loclabel=label+1;
+		label+=2;
+		reg_in_use[pre_reg]=0;
+		retval=evaluate(root->right);
+		printf("JMP L%d\n",loclabel-1);		
+		printf("L%d: ",loclabel);
+		//while(evaluate(root->left))
+		//	retval=evaluate(root->right);
 		return 0;
 	} 
 	else if(strcmp(root->construct,">")==0)
-        	return evaluate(root->left)>evaluate(root->right);
+        {
+		retval=evaluate(root->right);
+		printf("MOV R%d, R%d\n",3,pre_reg);
+		reg_in_use[pre_reg]=0;
+		retval=evaluate(root->left);
+		printf("GT R%d, R%d\n",pre_reg,3);
+		//return evaluate(root->left)>evaluate(root->right);
+	}
 	else if(strcmp(root->construct,"<")==0)
-		return evaluate(root->left)<evaluate(root->right);
+	{
+		retval=evaluate(root->right);
+		printf("MOV R%d, R%d\n",3,pre_reg);
+		reg_in_use[pre_reg]=0;
+		retval=evaluate(root->left);
+		printf("LT R%d, R%d\n",pre_reg,3);
+		//return evaluate(root->left)<evaluate(root->right);
+	}
 	else if(strcmp(root->construct,"==")==0)
-		return evaluate(root->left)==evaluate(root->right);
+	{
+		retval=evaluate(root->right);
+		printf("MOV R%d, R%d\n",3,pre_reg);
+		reg_in_use[pre_reg]=0;
+		retval=evaluate(root->left);
+		printf("EQ R%d, R%d\n",pre_reg,3);
+		//return evaluate(root->left)==evaluate(root->right);
+	}
 	else if(strcmp(root->construct,">=")==0)
-		return evaluate(root->left)>=evaluate(root->right);
+	{
+		retval=evaluate(root->right);
+		printf("MOV R%d, R%d\n",3,pre_reg);
+		reg_in_use[pre_reg]=0;
+		retval=evaluate(root->left);
+		printf("GE R%d, R%d\n",pre_reg,3);
+		//return evaluate(root->left)>=evaluate(root->right);
+	}
 	else if(strcmp(root->construct,"<=")==0)
-		return evaluate(root->left)<=evaluate(root->right);
+	{
+		retval=evaluate(root->right);
+		printf("MOV R%d, R%d\n",3,pre_reg);
+		reg_in_use[pre_reg]=0;
+		retval=evaluate(root->left);
+		printf("LE R%d, R%d\n",pre_reg,3);
+		//return evaluate(root->left)<=evaluate(root->right);
+	}
 	else if(strcmp(root->construct,"!=")==0)
-		return evaluate(root->left)!=evaluate(root->right); 
+	{
+		retval=evaluate(root->right);
+		printf("MOV R%d, R%d\n",3,pre_reg);
+		reg_in_use[pre_reg]=0;
+		retval=evaluate(root->left);
+		printf("NE R%d, R%d\n",pre_reg,3);
+		//return evaluate(root->left)!=evaluate(root->right); 
+	}
 	else if(strcmp(root->construct,"%NUM%")==0)
         {
 		if(reg_in_use[pre_reg]!=0)
@@ -337,11 +396,11 @@ int evaluate(struct tree_node *root)
 		else
 		{
 			retval=evaluate(root->left->right);
-			printf("MOV R%d, %d\n",4,root->left->variable->binding);
-			printf("ADD R%d, R%d\n",4,pre_reg);
+			printf("MOV R%d, %d\n",3,root->left->variable->binding);
+			printf("ADD R%d, R%d\n",3,pre_reg);
 			reg_in_use[pre_reg]=0;
 			retval=evaluate(root->right);
-			printf("MOV [R%d], R%d\n",4,pre_reg);
+			printf("MOV [R%d], R%d\n",3,pre_reg);
 			reg_in_use[pre_reg]=0;
 			/*if(retval<0 || retval>=root->left->variable->size)
 			{
