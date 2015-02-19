@@ -16,7 +16,6 @@ struct tree_node
 	struct tree_node *right;
 };
 
-int reg_in_use[8]={0};
 int pre_reg=0;
 int label=1;
 
@@ -242,7 +241,6 @@ int evaluate(struct tree_node *root)
 		printf("JZ R%d, L%d\n",pre_reg,label);
 		loclabel=label;
 		label+=1;
-		reg_in_use[pre_reg]=0;
 		retval=evaluate(root->right);		
 		printf("L%d: ",loclabel);
 		//if(evaluate(root->left))
@@ -256,7 +254,6 @@ int evaluate(struct tree_node *root)
 		printf("JZ R%d, L%d\n",pre_reg,label+1);
 		loclabel=label+1;
 		label+=2;
-		reg_in_use[pre_reg]=0;
 		retval=evaluate(root->right);
 		printf("JMP L%d\n",loclabel-1);		
 		printf("L%d: ",loclabel);
@@ -266,142 +263,134 @@ int evaluate(struct tree_node *root)
 	} 
 	else if(strcmp(root->construct,">")==0)
         {
-		retval=evaluate(root->right);
-		printf("MOV R%d, R%d\n",3,pre_reg);
-		reg_in_use[pre_reg]=0;
 		retval=evaluate(root->left);
-		printf("GT R%d, R%d\n",pre_reg,3);
+		pre_reg+=1;
+		retval=evaluate(root->right);
+		pre_reg-=1;
+		printf("GT R%d, R%d\n",pre_reg,pre_reg+1);
 		//return evaluate(root->left)>evaluate(root->right);
 	}
 	else if(strcmp(root->construct,"<")==0)
 	{
-		retval=evaluate(root->right);
-		printf("MOV R%d, R%d\n",3,pre_reg);
-		reg_in_use[pre_reg]=0;
 		retval=evaluate(root->left);
-		printf("LT R%d, R%d\n",pre_reg,3);
+		pre_reg+=1;
+		retval=evaluate(root->right);
+		pre_reg-=1;
+		printf("LT R%d, R%d\n",pre_reg,pre_reg+1);
 		//return evaluate(root->left)<evaluate(root->right);
 	}
 	else if(strcmp(root->construct,"==")==0)
 	{
-		retval=evaluate(root->right);
-		printf("MOV R%d, R%d\n",3,pre_reg);
-		reg_in_use[pre_reg]=0;
 		retval=evaluate(root->left);
-		printf("EQ R%d, R%d\n",pre_reg,3);
+		pre_reg+=1;
+		retval=evaluate(root->right);
+		pre_reg-=1;
+		printf("EQ R%d, R%d\n",pre_reg,pre_reg+1);
 		//return evaluate(root->left)==evaluate(root->right);
 	}
 	else if(strcmp(root->construct,">=")==0)
 	{
-		retval=evaluate(root->right);
-		printf("MOV R%d, R%d\n",3,pre_reg);
-		reg_in_use[pre_reg]=0;
 		retval=evaluate(root->left);
-		printf("GE R%d, R%d\n",pre_reg,3);
+		pre_reg+=1;
+		retval=evaluate(root->right);
+		pre_reg-=1;
+		printf("GE R%d, R%d\n",pre_reg,pre_reg+1);
 		//return evaluate(root->left)>=evaluate(root->right);
 	}
 	else if(strcmp(root->construct,"<=")==0)
 	{
-		retval=evaluate(root->right);
-		printf("MOV R%d, R%d\n",3,pre_reg);
-		reg_in_use[pre_reg]=0;
 		retval=evaluate(root->left);
-		printf("LE R%d, R%d\n",pre_reg,3);
+		pre_reg+=1;
+		retval=evaluate(root->right);
+		pre_reg-=1;
+		printf("LE R%d, R%d\n",pre_reg,pre_reg+1);
 		//return evaluate(root->left)<=evaluate(root->right);
 	}
 	else if(strcmp(root->construct,"!=")==0)
 	{
-		retval=evaluate(root->right);
-		printf("MOV R%d, R%d\n",3,pre_reg);
-		reg_in_use[pre_reg]=0;
 		retval=evaluate(root->left);
-		printf("NE R%d, R%d\n",pre_reg,3);
+		pre_reg+=1;
+		retval=evaluate(root->right);
+		pre_reg-=1;
+		printf("NE R%d, R%d\n",pre_reg,pre_reg+1);
 		//return evaluate(root->left)!=evaluate(root->right); 
 	}
 	else if(strcmp(root->construct,"%NUM%")==0)
-        {
-		if(reg_in_use[pre_reg]!=0)
-			pre_reg=(pre_reg+1)%3;	
+        {	
 		printf("MOV R%d, %d\n",pre_reg,root->val);
-		reg_in_use[pre_reg]=1;
 		//return root->val;
 	}
 	else if(strcmp(root->construct,"%BOOL%")==0)
         {
-		if(reg_in_use[pre_reg]!=0)
-			pre_reg=(pre_reg+1)%3;	
 		printf("MOV R%d, %d\n",pre_reg,root->val);
-		reg_in_use[pre_reg]=1;
 		//return root->val;
 	}
 	else if(strcmp(root->construct,"+")==0)
         {
 		retval=evaluate(root->left);
+		pre_reg+=1;
 		retval=evaluate(root->right);
-		retval=(pre_reg-1)%3;
-		printf("ADD R%d, R%d\n",retval,pre_reg);
-		reg_in_use[pre_reg]=0;
-		pre_reg=(pre_reg-1)%3;
+		pre_reg-=1;
+		printf("ADD R%d, R%d\n",pre_reg,pre_reg+1);
 		//return evaluate(root->left)+evaluate(root->right);
 	}
 	else if(strcmp(root->construct,"*")==0)
         {
 		retval=evaluate(root->left);
+		pre_reg+=1;
 		retval=evaluate(root->right);
-		retval=(pre_reg-1)%3;
-		printf("MUL R%d, R%d\n",retval,pre_reg);
-		reg_in_use[pre_reg]=0;
-		pre_reg=(pre_reg-1)%3;
+		pre_reg-=1;
+		printf("MUL R%d, R%d\n",pre_reg,pre_reg+1);
 		//return evaluate(root->left)*evaluate(root->right);
 	}
 	else if(strcmp(root->construct,"-")==0)
         {
 		retval=evaluate(root->left);
+		pre_reg+=1;
 		retval=evaluate(root->right);
-		retval=(pre_reg-1)%3;
-		printf("SUB R%d, R%d\n",retval,pre_reg);
-		reg_in_use[pre_reg]=0;
-		pre_reg=(pre_reg-1)%3;
+		pre_reg-=1;
+		printf("SUB R%d, R%d\n",pre_reg,pre_reg+1);
 		//return evaluate(root->left)-evaluate(root->right);
 	}
 	else if(strcmp(root->construct,"/")==0)
         {
 		retval=evaluate(root->left);
+		pre_reg+=1;
 		retval=evaluate(root->right);
-		retval=(pre_reg-1)%3;
-		printf("DIV R%d, R%d\n",retval,pre_reg);
-		reg_in_use[pre_reg]=0;
-		pre_reg=(pre_reg-1)%3;
+		pre_reg-=1;
+		printf("DIV R%d, R%d\n",pre_reg,pre_reg+1);
 		//return evaluate(root->left)/evaluate(root->right);
 	}
 	else if(strcmp(root->construct,"%")==0)
         {
 		retval=evaluate(root->left);
+		pre_reg+=1;
 		retval=evaluate(root->right);
-		retval=(pre_reg-1)%3;
-		printf("MOD R%d, R%d\n",retval,pre_reg);
-		reg_in_use[pre_reg]=0;
-		pre_reg=(pre_reg-1)%3;
+		pre_reg-=1;
+		printf("MOD R%d, R%d\n",pre_reg,pre_reg+1);
 		//return evaluate(root->left)%evaluate(root->right);
 	}
 	else if(strcmp(root->construct,"=")==0)
 	{
 		if(strcmp(root->left->construct,"%IDNODE%")==0)
 		{
+			printf("MOV R%d, %d\n",pre_reg,root->left->variable->binding);
+			pre_reg+=1;
 			retval=evaluate(root->right);
-			printf("MOV R%d, %d\n",4,root->left->variable->binding);
-			printf("MOV [R%d], R%d\n",4,pre_reg);
-			reg_in_use[pre_reg]=0;
+			pre_reg-=1;
+			printf("MOV [R%d], R%d\n",pre_reg,pre_reg+1);
 		}
 		else
 		{
+			printf("MOV R%d, %d\n",pre_reg,root->left->variable->binding);
+			pre_reg+=1;
 			retval=evaluate(root->left->right);
-			printf("MOV R%d, %d\n",3,root->left->variable->binding);
-			printf("ADD R%d, R%d\n",3,pre_reg);
-			reg_in_use[pre_reg]=0;
+			pre_reg-=1;
+			printf("ADD R%d, R%d\n",pre_reg,pre_reg+1);
+			pre_reg+=1;
 			retval=evaluate(root->right);
-			printf("MOV [R%d], R%d\n",3,pre_reg);
-			reg_in_use[pre_reg]=0;
+			pre_reg-=1;
+			printf("MOV [R%d], R%d\n",pre_reg,pre_reg+1);
 			/*if(retval<0 || retval>=root->left->variable->size)
 			{
 				printf("Parsing Error: Segmentation Fault Core Dumped\n");
@@ -414,24 +403,19 @@ int evaluate(struct tree_node *root)
 		return 0;
 	}
 	else if(strcmp(root->construct,"%IDNODE%")==0)	
-	{
-		if(reg_in_use[pre_reg]!=0)
-			pre_reg=(pre_reg+1)%3;	
-		printf("MOV R%d, %d\n",4,root->variable->binding);
-		printf("MOV R%d, [R%d]\n",pre_reg,4);
-		reg_in_use[pre_reg]=1;
+	{	
+		printf("MOV R%d, %d\n",pre_reg,root->variable->binding);
+		printf("MOV R%d, [R%d]\n",pre_reg,pre_reg);
 		//return root->variable->binding[0];
 	}
 	else if(strcmp(root->construct,"%ARRNODE%")==0)
 	{
+		printf("MOV R%d, %d\n",pre_reg,root->variable->binding);
+		pre_reg+=1;
 		retval=evaluate(root->right);
-		printf("MOV R%d, %d\n",4,root->variable->binding);
-		printf("ADD R%d, R%d\n",4,pre_reg);
-		reg_in_use[pre_reg]=0;
-		if(reg_in_use[pre_reg]!=0)
-			pre_reg=(pre_reg+1)%3;
-		printf("MOV R%d, [R%d]\n",pre_reg,4);
-		reg_in_use[pre_reg]=1;
+		pre_reg-=1;
+		printf("ADD R%d, R%d\n",pre_reg,pre_reg+1);
+		printf("MOV R%d, [R%d]\n",pre_reg,pre_reg);
 		/*if(retval<0 || retval>=root->variable->size)
 		{
 			printf("Syntax Error: Segmentation Fault Core Dumped\n");
@@ -443,20 +427,21 @@ int evaluate(struct tree_node *root)
 	}		
 	else if(strcmp(root->construct,"%READ%")==0)
 	{
-		printf("IN R%d\n",5);
-		printf("MOV R%d, %d\n",4,root->variable->binding);
-		printf("MOV [R%d], R%d\n",4,5);
+		printf("IN R%d\n",pre_reg);
+		printf("MOV R%d, %d\n",pre_reg+1,root->variable->binding);
+		printf("MOV [R%d], R%d\n",pre_reg+1,pre_reg);
 		//scanf("%d",&root->variable->binding[0]);
 		return 0;
 	}
 	else if(strcmp(root->construct,"%READARR%")==0)
-	{
+	{		
+		printf("IN R%d\n",pre_reg);
+		pre_reg+=1;
 		retval=evaluate(root->right);
-		printf("IN R%d\n",5);
-		printf("MOV R%d, %d\n",4,root->variable->binding);
-		printf("ADD R%d, R%d\n",4,pre_reg);
-		reg_in_use[pre_reg]=0;
-		printf("MOV [R%d], R%d\n",4,5);
+		printf("MOV R%d, %d\n",pre_reg+1,root->variable->binding);
+		printf("ADD R%d, R%d\n",pre_reg,pre_reg+1);
+		pre_reg-=1;
+		printf("MOV [R%d], R%d\n",pre_reg+1,pre_reg);
 		/*if(retval<0 || retval>=root->variable->size)
 		{
 			printf("Syntax Error: Segmentation Fault Core Dumped\n");
@@ -471,7 +456,6 @@ int evaluate(struct tree_node *root)
 	{
 		retval=evaluate(root->left);
 		printf("OUT R%d\n",pre_reg);
-		reg_in_use[pre_reg]=0;
 		return 0;
 	}
 	return 0;
