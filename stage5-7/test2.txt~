@@ -1,9 +1,0 @@
-decl
-	integer i,j;
-enddecl
-i=12+322*0-232+234%100;
-j=i;
-write(i);
-write(j+234-345*0);
-read(i);
-write(i);
