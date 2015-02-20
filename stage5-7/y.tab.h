@@ -64,7 +64,10 @@ extern int yydebug;
     GE = 274,
     LE = 275,
     NE = 276,
-    BOOLEAN = 277
+    AND = 277,
+    OR = 278,
+    NOT = 279,
+    BOOLEAN = 280
   };
 #endif
 /* Tokens.  */
@@ -87,7 +90,10 @@ extern int yydebug;
 #define GE 274
 #define LE 275
 #define NE 276
-#define BOOLEAN 277
+#define AND 277
+#define OR 278
+#define NOT 279
+#define BOOLEAN 280
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -100,7 +106,7 @@ union YYSTYPE
 	char *var;
 	struct tree_node *nptr;	
 
-#line 104 "y.tab.h" /* yacc.c:1909  */
+#line 110 "y.tab.h" /* yacc.c:1909  */
 };
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
