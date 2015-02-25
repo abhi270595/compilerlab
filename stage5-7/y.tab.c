@@ -550,7 +550,7 @@ static const yytype_int16 yypact[] =
      means the default is an error.  */
 static const yytype_uint8 yydefact[] =
 {
-       0,     0,     0,     2,     0,     8,     9,     0,     6,     0,
+       0,     6,     0,     2,     0,     8,     9,     0,     6,     0,
        1,     0,     0,     0,     0,     0,     3,    15,     4,     5,
       12,     0,     0,     0,     0,     0,     0,     0,    14,     0,
        0,     7,    41,    39,    42,    43,     0,     0,     0,     0,
@@ -680,7 +680,7 @@ static const yytype_uint8 yyr1[] =
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_uint8 yyr2[] =
 {
-       0,     2,     1,     2,     3,     2,     1,     3,     1,     1,
+       0,     2,     1,     2,     3,     2,     0,     3,     1,     1,
        3,     6,     1,     4,     2,     1,     8,    10,     8,     4,
        7,     5,     8,     5,     3,     3,     3,     3,     3,     3,
        3,     3,     2,     3,     3,     3,     3,     3,     3,     1,

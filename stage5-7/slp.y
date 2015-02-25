@@ -66,7 +66,7 @@ total    : gdecl Slist                                     {$$=mkPgmNode(NULL,$2
 gdecl    : DECL decllist ENDDECL                           {}
   ;
 decllist : decl decllist                                   {}
-         | decl                                            {}
+         |                                                 {}
   ;
 decl     : type idlist';'                                  {}
   ;
