@@ -1,0 +1,35 @@
+decl
+    integer q[100],n,i,j,swap;
+    boolean a,b;
+enddecl
+i=0;
+
+read(n);
+
+while(i < n) do
+    read(q[i]);
+    i = i + 1;
+endwhile;
+
+i = 0;
+j = 0;
+
+while(i < (n-1)) do
+    j = 0;
+    while(j < (n-i-1)) do
+        if(q[j] > q[j+1]) then
+            swap = q[j];
+            q[j] = q[j+1];
+            q[j+1] = swap;
+        endif;
+        j = j + 1;
+    endwhile;
+    i = i + 1;
+endwhile;
+
+i = 0;
+while(i < n) do
+    write(q[i]);
+    i = i + 1;
+endwhile;
+

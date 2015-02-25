@@ -19,6 +19,7 @@
 %token <nptr>WRITE
 %token <nptr>IF
 %token <nptr>THEN
+%token <nptr>ELSE
 %token <nptr>ENDIF
 %token <nptr>WHILE
 %token <nptr>DO
@@ -80,8 +81,9 @@ idlist   : ID','idlist                                     {Ginstall($1,datatype
 Slist    : Slist Stmt          			           {$$=mkListNode($1,$2);}
          | Stmt            			           {$$=$1;}
   ;
-Stmt     : IF'('expr')'THEN Slist ENDIF';'                 {$$=mkCondNode("%IF%",$3,$6);}
-         | WHILE'('expr')'DO Slist ENDWHILE';'             {$$=mkCondNode("%WHILE%",$3,$6);}
+Stmt     : IF'('expr')'THEN Slist ENDIF';'                 {$$=mkCondNode("%IF%",$3,NULL,$6);}
+  	 | IF'('expr')'THEN Slist ELSE Slist ENDIF';'      {$$=mkCondNode("%IFELSE%",$3,$6,$8);}
+         | WHILE'('expr')'DO Slist ENDWHILE';'             {$$=mkCondNode("%WHILE%",$3,NULL,$6);}
          | ID'='expr';'        			           {$$=mkEquNode("=",ckLeafNode_Id($1),$3);}
          | ID'['expr']''='expr';'        	           {$$=mkEquNode("=",ckLeafNode_Arr($1,$3),$6);}
          | READ '(' ID ')' ';'     		           {$$=mkRNode($3);}

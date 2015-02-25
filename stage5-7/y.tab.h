@@ -51,23 +51,24 @@ extern int yydebug;
     WRITE = 261,
     IF = 262,
     THEN = 263,
-    ENDIF = 264,
-    WHILE = 265,
-    DO = 266,
-    ENDWHILE = 267,
-    INTEGER = 268,
-    DECL = 269,
-    ENDDECL = 270,
-    EQUAL = 271,
-    TRUE = 272,
-    FALSE = 273,
-    GE = 274,
-    LE = 275,
-    NE = 276,
-    AND = 277,
-    OR = 278,
-    NOT = 279,
-    BOOLEAN = 280
+    ELSE = 264,
+    ENDIF = 265,
+    WHILE = 266,
+    DO = 267,
+    ENDWHILE = 268,
+    INTEGER = 269,
+    DECL = 270,
+    ENDDECL = 271,
+    EQUAL = 272,
+    TRUE = 273,
+    FALSE = 274,
+    GE = 275,
+    LE = 276,
+    NE = 277,
+    AND = 278,
+    OR = 279,
+    NOT = 280,
+    BOOLEAN = 281
   };
 #endif
 /* Tokens.  */
@@ -77,23 +78,24 @@ extern int yydebug;
 #define WRITE 261
 #define IF 262
 #define THEN 263
-#define ENDIF 264
-#define WHILE 265
-#define DO 266
-#define ENDWHILE 267
-#define INTEGER 268
-#define DECL 269
-#define ENDDECL 270
-#define EQUAL 271
-#define TRUE 272
-#define FALSE 273
-#define GE 274
-#define LE 275
-#define NE 276
-#define AND 277
-#define OR 278
-#define NOT 279
-#define BOOLEAN 280
+#define ELSE 264
+#define ENDIF 265
+#define WHILE 266
+#define DO 267
+#define ENDWHILE 268
+#define INTEGER 269
+#define DECL 270
+#define ENDDECL 271
+#define EQUAL 272
+#define TRUE 273
+#define FALSE 274
+#define GE 275
+#define LE 276
+#define NE 277
+#define AND 278
+#define OR 279
+#define NOT 280
+#define BOOLEAN 281
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -106,7 +108,7 @@ union YYSTYPE
 	char *var;
 	struct tree_node *nptr;	
 
-#line 110 "y.tab.h" /* yacc.c:1909  */
+#line 112 "y.tab.h" /* yacc.c:1909  */
 };
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1

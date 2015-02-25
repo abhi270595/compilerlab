@@ -13,6 +13,7 @@ struct tree_node
 	struct Gsymbol *variable;
 	char *construct;
 	struct tree_node *left;
+	struct tree_node *middle;
 	struct tree_node *right;
 };
 
@@ -29,12 +30,13 @@ struct tree_node * mkPgmNode(struct tree_node *left,struct tree_node *right)
 	return root;
 }
 
-struct tree_node * mkCondNode(char *opt,struct tree_node *left,struct tree_node *right)
+struct tree_node * mkCondNode(char *opt,struct tree_node *left,struct tree_node *middle,struct tree_node *right)
 {
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct=opt;
     	root->type="%VOID%";
 	root->left=left;
+	root->middle=middle;
 	root->right=right;
     	if(root->left->type!="%BOOLEAN%")
     	{
@@ -251,7 +253,7 @@ struct tree_node * mkListNode(struct tree_node *left,struct tree_node *right)
 
 int evaluate(struct tree_node *root)
 {
-	int retval,loclabel;
+	int retval,loclabel,loclabel1;
 	if(strcmp(root->construct,"%PGM%")==0)
 	{
 		printf("START\n");
@@ -273,6 +275,23 @@ int evaluate(struct tree_node *root)
 		label+=1;
 		retval=evaluate(root->right);		
 		printf("L%d: ",loclabel);
+		//if(evaluate(root->left))
+		//	retval=evaluate(root->right);
+		return 0;
+	}
+	else if(strcmp(root->construct,"%IFELSE%")==0)
+	{
+		retval=evaluate(root->left);
+		printf("JZ R%d, L%d\n",pre_reg,label);
+		loclabel=label;
+		label+=1;
+		retval=evaluate(root->middle);
+		printf("JMP L%d\n",label);
+		loclabel1=label;
+		label+=1;
+		printf("L%d: ",loclabel);		
+		retval=evaluate(root->right);		
+		printf("L%d: ",loclabel1);
 		//if(evaluate(root->left))
 		//	retval=evaluate(root->right);
 		return 0;
