@@ -1,0 +1,13 @@
+decl
+    integer i,arr[10];
+enddecl
+i=0;
+while(i<10) do
+    read(arr[i]);
+    i=i+1;
+endwhile;
+i=0;
+while(i<10) do
+    write(arr[i]);
+    i=i+1;
+endwhile;
