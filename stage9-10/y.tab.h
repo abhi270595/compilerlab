@@ -57,18 +57,22 @@ extern int yydebug;
     DO = 267,
     ENDWHILE = 268,
     INTEGER = 269,
-    DECL = 270,
-    ENDDECL = 271,
-    EQUAL = 272,
-    TRUE = 273,
-    FALSE = 274,
-    GE = 275,
-    LE = 276,
-    NE = 277,
-    AND = 278,
-    OR = 279,
-    NOT = 280,
-    BOOLEAN = 281
+    BOOLEAN = 270,
+    DECL = 271,
+    ENDDECL = 272,
+    BEGINING = 273,
+    END = 274,
+    MAIN = 275,
+    RETURN = 276,
+    EQUAL = 277,
+    TRUE = 278,
+    FALSE = 279,
+    GE = 280,
+    LE = 281,
+    NE = 282,
+    AND = 283,
+    OR = 284,
+    NOT = 285
   };
 #endif
 /* Tokens.  */
@@ -84,18 +88,22 @@ extern int yydebug;
 #define DO 267
 #define ENDWHILE 268
 #define INTEGER 269
-#define DECL 270
-#define ENDDECL 271
-#define EQUAL 272
-#define TRUE 273
-#define FALSE 274
-#define GE 275
-#define LE 276
-#define NE 277
-#define AND 278
-#define OR 279
-#define NOT 280
-#define BOOLEAN 281
+#define BOOLEAN 270
+#define DECL 271
+#define ENDDECL 272
+#define BEGINING 273
+#define END 274
+#define MAIN 275
+#define RETURN 276
+#define EQUAL 277
+#define TRUE 278
+#define FALSE 279
+#define GE 280
+#define LE 281
+#define NE 282
+#define AND 283
+#define OR 284
+#define NOT 285
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -108,7 +116,7 @@ union YYSTYPE
 	char *var;
 	struct tree_node *nptr;	
 
-#line 112 "y.tab.h" /* yacc.c:1909  */
+#line 120 "y.tab.h" /* yacc.c:1909  */
 };
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
