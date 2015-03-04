@@ -9,7 +9,7 @@ int symbol[26];
 struct tree_node
 {
 	int val;
-    	char *type;
+    	int type;
 	struct Gsymbol *variable;
 	char *construct;
 	struct tree_node *left;
@@ -22,44 +22,49 @@ struct tree_node
 int pre_reg=0;
 int label=1;
 
+void insertlocal(struct Argstruct *ARGLIST)
+{
+	struct Argstruct *temp1=ARGLIST;
+	int binding=-3;
+	while(temp1!=NULL)
+	{
+		Linstall(temp1->name,temp1->type,binding);
+		binding-=1;
+		temp1=temp1->next;
+	}
+}
+
 struct tree_node * mkFDefNode(char *name,int type,struct Argstruct *ARGLIST,struct tree_node *right)
 {
 	struct Gsymbol *tmp=Glookup(head,name,"%FUNCTION%");
 	struct Argstruct *temp,*temp1;
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
-	int binding=-3;
-	if(tmp!=NULL)
+	if(tmp!=NULL || strcmp(name,"main")==0)
 	{
-		temp=tmp->ARGLIST;
+		if(strcmp(name,"main")!=0)
+		{
+			temp=tmp->ARGLIST;
+			temp1=ARGLIST;
+			while(temp!=NULL && temp1!=NULL && strcmp(temp->name,temp1->name)==0 && temp->type==temp1->type)
+			{
+				temp=temp->next;
+				temp1=temp1->next;
+			}
+			if(temp!=NULL && temp1!=NULL && (strcmp(temp->name,temp1->name)!=0 || temp->type!=temp1->type))
+			{
+				printf("Syntax Error:Line No-%d, %s function's Arguments did not match to the defination\n",yylineno,name);
+       				exit(1);
+			}	
+			if(tmp->isdef!=0)
+			{
+				printf("Syntax Error:Line No-%d, Function %s is already defined\n",yylineno,name);
+       				exit(1);
+			}
+			tmp->isdef=1;
+		}
 		temp1=ARGLIST;
-		while(temp!=NULL && temp1!=NULL && temp->name==temp1->name && temp->type==temp1->type)
-		{
-			temp=temp->next;
-			temp1=temp1->next;
-		}
-		if(temp->name!=temp1->name || temp->type!=temp1->type)
-		{
-			printf("Syntax Error:Line No-%d, %s function's Arguments did not match to the defination\n",yylineno,name);
-       			exit(1);
-		}	
-		if(tmp->isdef!=0)
-		{
-			printf("Syntax Error:Line No-%d, Function %s is already defined\n",yylineno,name);
-       			exit(1);
-		}
-		tmp->isdef=1;
-		temp1=ARGLIST;
-		while(temp1!=NULL)
-		{
-			Linstall(temp1->name,temp1->type,binding);
-			binding-=1;
-			temp1=temp1->next;
-		}
 		root->construct="%FUNCTION%";
-		if(type==2)
-        		root->type="%INTEGER%";
-    		else
-        		root->type="%BOOLEAN%";
+        	root->type=type;
 		root->lsymbol=lsym;
 		root->variable=tmp;
 		root->ARGLIST=ARGLIST;
@@ -80,11 +85,11 @@ struct tree_node * mkCondNode(char *opt,struct tree_node *left,struct tree_node 
 {
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct=opt;
-    	root->type="%VOID%";
+    	root->type=0;
 	root->left=left;
 	root->middle=middle;
 	root->right=right;
-    	if(root->left->type!="%BOOLEAN%")
+    	if(root->left->type!=1)
     	{
         	printf("Syntax Error:Line No-%d, Invalid Type for the Condition Argument\n",yylineno);
         	exit(1);
@@ -98,12 +103,12 @@ struct tree_node * mkBoolOptNode(char *opt,struct tree_node *left,struct tree_no
 	root->construct=opt;
 	root->left=left;
 	root->right=right;
-    	if(root->left->type!="%INTEGER%" || root->right->type!="%INTEGER%")
+    	if(root->left->type!=2 || root->right->type!=2)
     	{
         	printf("Syntax Error:Line No-%d, Invalid Type of Oprands to a Boolean Operator %s\n",yylineno,opt);
        		exit(1);
     	}
-        root->type="%BOOLEAN%";
+        root->type=1;
 	return root;
 }
 
@@ -113,12 +118,12 @@ struct tree_node * mkBoolOptBoolNode(char *opt,struct tree_node *left,struct tre
 	root->construct=opt;
 	root->left=left;
 	root->right=right;
-    	if(root->left->type!="%BOOLEAN%" || root->right->type!="%BOOLEAN%")
+    	if(root->left->type!=1 || root->right->type!=1)
     	{
         	printf("Syntax Error:Line No-%d, Invalid Type of Oprands to a Boolean Operator %s\n",yylineno,opt);
        		exit(1);
     	}
-        root->type="%BOOLEAN%";
+        root->type=1;
 	return root;
 }
 
@@ -128,12 +133,12 @@ struct tree_node * mkBoolOptNotNode(char *opt,struct tree_node *left)
 	root->construct=opt;
 	root->left=left;
 	root->right=NULL;
-    	if(root->left->type!="%BOOLEAN%")
+    	if(root->left->type!=1)
     	{
         	printf("Syntax Error:Line No-%d, Invalid Type of Oprands to a Boolean Operator %s\n",yylineno,opt);
        		exit(1);
     	}
-        root->type="%BOOLEAN%";
+        root->type=1;
 	return root;
 }
 
@@ -143,12 +148,12 @@ struct tree_node * mkOperatorNode(char *opt,struct tree_node *left,struct tree_n
 	root->construct=opt;
 	root->left=left;
 	root->right=right;
-    	if(root->left->type!="%INTEGER%" || root->right->type!="%INTEGER%")
+    	if(root->left->type!=2 || root->right->type!=2)
     	{
        		printf("Syntax Error:Line No-%d, Invalid Type of Oprands to a Arithmetic Operator %s\n",yylineno,opt);
         	exit(1);
     	}
-        root->type="%INTEGER%";
+        root->type=2;
 	return root;
 }
 
@@ -163,7 +168,7 @@ struct tree_node * mkEquNode(char *opt,struct tree_node *left,struct tree_node *
         	printf("Syntax Error:Line No-%d, An Boolean Variable Cannot be assigned to an Arithmetic Expression\n",yylineno);
         	exit(1);
     	}
-    	root->type="%VOID%";
+    	root->type=0;
 	return root;
 }
 
@@ -174,7 +179,7 @@ struct tree_node * mkLeafNode_Num(int num)
 	root->val=num;
 	root->left=NULL;
 	root->right=NULL;
-    	root->type="%INTEGER%";
+    	root->type=2;
 	return root;
 }
 
@@ -188,7 +193,7 @@ struct tree_node * mkLeafNode_Bool(char *value)
         	root->val=0;
 	root->left=NULL;
 	root->right=NULL;
-    	root->type="%BOOLEAN%";
+    	root->type=1;
 	return root;
 }
 
@@ -199,7 +204,7 @@ struct tree_node * mkWNode(struct tree_node *left)
 	root->construct="%WRITE%";
 	root->left=left;
 	root->right=NULL;
-    	root->type="%VOID%";
+    	root->type=0;
 	return root;
 }
 
@@ -208,15 +213,21 @@ struct tree_node * mkRNode(char *var)
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct="%READ%";
 	struct Gsymbol *temp=Glookup(head,var,"%ID%");	
-	if(temp==NULL)
+	struct Lsymbol *temp1=Llookup(lsym,var);
+	root->lsymbol=NULL;
+	root->variable=NULL;
+	if(temp1==NULL && temp==NULL)
 	{
 		printf("Syntax Error:Line No-%d, Variable %s was undeclared\n",yylineno,var);
 		exit(1);
 	}
-	root->variable=temp;
+	else if(temp1!=NULL)
+		root->lsymbol=temp1;
+	else
+		root->variable=temp;
 	root->left=NULL;
 	root->right=NULL;
-    	root->type="%VOID%";
+    	root->type=0;
 	return root;
 }
 
@@ -230,7 +241,7 @@ struct tree_node * mkRArrNode(char *var,struct tree_node *right)
 		printf("Syntax Error:Line No-%d, Array %s was undeclared\n",yylineno,var);
 		exit(1);
 	}
-    	if(right->type!="%INTEGER%")
+    	if(right->type!=2)
     	{
         	printf("Syntax Error:Line No-%d, Array index cannot be of Another Type except Integer\n",yylineno);
     		exit(1);
@@ -238,7 +249,7 @@ struct tree_node * mkRArrNode(char *var,struct tree_node *right)
 	root->variable=temp;
 	root->left=NULL;
 	root->right=right;
-    	root->type="%VOID%";
+    	root->type=0;
 	return root;
 }
 
@@ -247,16 +258,24 @@ struct tree_node * ckLeafNode_Id(char *var)
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct="%IDNODE%";
 	struct Gsymbol *temp=Glookup(head,var,"%ID%");	
-	if(temp==NULL)
+	struct Lsymbol *temp1=Llookup(lsym,var);
+	root->lsymbol=NULL;
+	root->variable=NULL;	
+	if(temp1==NULL && temp==NULL)
 	{
 		printf("Syntax Error:Line No-%d, Variable %s was undeclared\n",yylineno,var);
 		exit(1);
 	}
-	root->variable=temp;
-    	if(root->variable->type==2)
-        	root->type="%INTEGER%";
-    	else
-        	root->type="%BOOLEAN%";
+	else if(temp1!=NULL)
+	{
+		root->lsymbol=temp1;
+    		root->type=root->lsymbol->type;
+	}
+	else
+	{
+		root->variable=temp;
+    		root->type=root->variable->type;
+	}
 	root->left=NULL;
 	root->right=NULL;
 	return root;
@@ -272,16 +291,13 @@ struct tree_node * ckLeafNode_Arr(char *var,struct tree_node *right)
 		printf("Syntax Error:Line No-%d, Array %s was undeclared\n",yylineno,var);
 		exit(1);
 	}
-    	if(right->type!="%INTEGER%")
+    	if(right->type!=2)
     	{
         	printf("Syntax Error:Line No-%d, Array index cannot be of Another Type except Integer\n",yylineno);
     		exit(1);
    	}
 	root->variable=temp;
-    	if(root->variable->type==2)
-        	root->type="%INTEGER%";
-  	else
-        	root->type="%BOOLEAN%";
+    	root->type=root->variable->type;
 	root->left=NULL;
 	root->right=right;
 	return root;
@@ -291,64 +307,43 @@ struct tree_node * ckLeafNode_Function(char *var,struct tree_node *right)
 {
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
 	root->construct="%FUNCTIONCALL%";
-	struct Gsymbol *temp=Glookup(head,var,"%FUNCTION%");	
+	struct Gsymbol *temp=Glookup(head,var,"%FUNCTION%");
+	struct tree_node *temp1=right;
+	struct Argstruct *temp2=temp->ARGLIST;	
 	if(temp==NULL)
 	{
 		printf("Syntax Error:Line No-%d, Function %s was undeclared\n",yylineno,var);
 		exit(1);
 	}
+	while(temp1!=NULL && temp2!=NULL && temp1->right->type==temp2->type)
+	{
+		temp1=temp1->left;
+		temp2=temp2->next;
+	}
+	if(temp1!=NULL || temp2!=NULL)
+	{
+		printf("Syntax Error:Line No-%d, Function %s calling arguments did not match with function %s defination\n",yylineno,var,var);
+		exit(1);
+	}
 	root->variable=temp;
-    	if(root->variable->type==2)
-        	root->type="%INTEGER%";
-  	else
-        	root->type="%BOOLEAN%";
+    	root->type=root->variable->type;
 	root->left=NULL;
 	root->right=right;
 	return root;
 }
 
-struct tree_node * mkReturnNode_Num(int num)
+struct tree_node * mkReturnNode(struct tree_node *right)
 {
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
-	root->construct="%RETNUM%";
-	root->val=num;
-	root->left=NULL;
-	root->right=NULL;
-    	root->type="%INTEGER%";
-	lsym=NULL;
-	return root;
-}
-
-struct tree_node * mkReturnNode_Id(char *var)
-{
-	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));	
-	struct Gsymbol *temp1=Glookup(head,var,"%ID%");
-	struct Lsymbol *temp=Llookup(lsym,var);	
-	root->construct="%RETID%";
-	if(temp==NULL && temp1==NULL)
+	if(retvaltype!=right->type)
 	{
-		printf("Syntax Error:Line No-%d, Variable %s was undeclared\n",yylineno,var);
+		printf("Syntax Error:Line No-%d, Function's return type did not match\n",yylineno);
 		exit(1);
 	}
-	else if(temp!=NULL)
-	{
-		root->lsymbol=temp;
-    		if(root->lsymbol->type==2)
-        		root->type="%INTEGER%";
-    		else
-        		root->type="%BOOLEAN%";
-	}
-	else if(temp1!=NULL)
-	{
-		root->variable=temp1;
-    		if(root->variable->type==2)
-        		root->type="%INTEGER%";
-    		else
-        		root->type="%BOOLEAN%";
-	}
+	root->construct="%RET%";
 	root->left=NULL;
-	root->right=NULL;
-	lsym=NULL;
+	root->right=right;
+    	root->type=right->type;
 	return root;
 }
 
@@ -358,30 +353,17 @@ struct tree_node * mkNode(char *construct,struct tree_node *left,struct tree_nod
 	root->construct=construct;
 	root->left=left;
 	root->right=right;
-    	root->type="%VOID%";
+    	root->type=0;
 	return root;
 }
 
 int evaluate(struct tree_node *root)
 {
 	int retval,loclabel,loclabel1;
-	if(strcmp(root->construct,"%PGM%")==0)
+	if(strcmp(root->construct,"%FUNCTION%")==0)
 	{
-		printf("START\n");
-		retval=evaluate(root->right);
-		printf("HALT\n");
-		return 0;
-	}
-	else if(strcmp(root->construct,"%FDEFLIST%")==0)
-	{
-		retval=evaluate(root->left);
-		retval=evaluate(root->right);
-		return 0;
-	}
-	else if(strcmp(root->construct,"%FUNCTION%")==0)
-	{
-		lsym=root->lsymbol;
-		printf("%s: ",root->variable->name);
+		//lsym=root->lsymbol;
+		//printf("%s: ",root->variable->name);
 		
 	}
 	else if(strcmp(root->construct,"%BODY%")==0)

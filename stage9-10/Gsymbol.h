@@ -36,6 +36,7 @@ struct Gsymbol
 struct Gsymbol *head=NULL;
 struct Argstruct *ARGLIST=NULL;
 struct Lsymbol *lsym=NULL;
+int retvaltype;
 int mem_loc_ptr=0;
 int lbind=1;
 

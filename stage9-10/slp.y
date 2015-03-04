@@ -30,9 +30,9 @@
 
 %%
 
-pgm       : total           			            {evaluate($1); exit(0);}
+pgm       : {printf("START\n");}total                       {printf("HALT\n"); exit(0);}
   ;
-total     : gdefblock fdeflist mainblock                    {$$=mkNode("%PGM%",$2,$3);}
+total     : gdefblock fdeflist mainblock                    {}
   ;
 gdefblock : DECL gdeflist ENDDECL                           {}
   ;
@@ -48,11 +48,11 @@ gidlist   : gid','gidlist                                   {}
           | gid                                             {}
   ;
 gid	  : ID                                              {Ginstall($1,datatype,1,"%ID%",NULL);}
-	  | ID'('arglist')'                                 {Ginstall($1,datatype,1,"%FUNCTION%",ARGLIST); ARGLIST=NULL;}
+	  | ID{retvaltype=datatype;}'('arglist')'           {Ginstall($1,retvaltype,1,"%FUNCTION%",ARGLIST); ARGLIST=NULL;}
           | ID'['NUM']'                                     {Ginstall($1,datatype,$3,"%ARR%",NULL);}
   ;
 arglist   : arg arglist                                     {}
-          |                                                 {}
+          | type argidlist                                  {}
   ;
 arg       : type argidlist';'                               {}
   ;
@@ -61,12 +61,12 @@ argidlist : argid','argidlist                               {}
   ;
 argid     : ID                                              {Arginstall($1,datatype);}
   ;
-fdeflist  :  fdeflist fdef      		            {$$=mkNode("%FDEFLIST%",$1,$2);}
+fdeflist  :  fdeflist fdef      		            {}
 	  |                                                 {}
   ;
-fdef      : type ID'('arglist')''{'ldefblock body'}'        {$$=mkFDefNode($2,datatype,ARGLIST,$8);}
+fdef      : type{retvaltype=datatype;}ID'('arglist')'{insertlocal(ARGLIST);}'{'ldefblock body'}'        {evaluate(mkFDefNode($3,retvaltype,ARGLIST,$10)); lsym=NULL;}
   ;
-mainblock : INTEGER MAIN'('')''{'ldefblock body'}'          {$$=mkFDefNode("main",2,NULL,$7);}
+mainblock : INTEGER{retvaltype=2;}MAIN'('')''{'ldefblock body'}'                 {evaluate(mkFDefNode("main",2,NULL,$8)); lsym=NULL;}
   ;
 ldefblock : DECL ldeflist ENDDECL                           {}
   ;
@@ -82,8 +82,7 @@ lid       : ID						    {Linstall($1,datatype,lbind); lbind+=1;}
   ;
 body      : BEGINING Slist retstmt END                      {$$=mkNode("%BODY%",$2,$3);}
   ;
-retstmt   : RETURN NUM ';'                                  {$$=mkReturnNode_Num($2);}
-          | RETURN ID ';'                                   {$$=mkReturnNode_Id($2);}
+retstmt   : RETURN expr ';'                                 {$$=mkReturnNode($2);}
   ;
 Slist     : Slist Stmt          			    {$$=mkNode("%LIST%",$1,$2);}
           |                     			    {}
@@ -98,7 +97,8 @@ Stmt      : IF'('expr')'THEN Slist ENDIF';'                 {$$=mkCondNode("%IF%
           | WRITE'('expr')'';'  			    {$$=mkWNode($3);}
   ;
 exprlist  : exprlist','expr                                 {$$=mkNode("%EXPRLIST%",$1,$3);}
-          |                                                 {}
+          | expr                                            {$$=mkNode("%EXPRLIST%",NULL,$1);}
+	  |                                                 {}
   ;
 expr      : expr'<'expr         			    {$$=mkBoolOptNode("<",$1,$3);}
           | expr'>'expr         			    {$$=mkBoolOptNode(">",$1,$3);}
