@@ -2,6 +2,11 @@ decl
 	integer i, j, tmp, n, a[100]; 
 enddecl
 
+integer main()
+{
+decl
+enddecl
+begin
 read(n);
 
 i = 0;
@@ -34,3 +39,6 @@ do
 	write(a[i]);
 	i = i + 1;
 endwhile;
+return 0;
+end
+}

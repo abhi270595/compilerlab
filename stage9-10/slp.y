@@ -30,11 +30,11 @@
 
 %%
 
-pgm       : {printf("START\n");}total                       {printf("HALT\n"); exit(0);}
+pgm       : {printf("START\n");}total                       {printf("hlt: HALT\n"); exit(0);}
   ;
 total     : gdefblock fdeflist mainblock                    {}
   ;
-gdefblock : DECL gdeflist ENDDECL                           {}
+gdefblock : DECL gdeflist ENDDECL                           {printf("MOV SP, %d\n",mem_loc_ptr-1); printf("MOV BP, 0\n"); printf("CALL main\n"); printf("JMP hlt\n");}
   ;
 gdeflist  : gdecl gdeflist                                  {}
           |                                                 {}
@@ -88,7 +88,7 @@ body      : BEGINING Slist retstmt END                      {$$=mkNode("%BODY%",
 retstmt   : RETURN expr ';'                                 {$$=mkReturnNode($2);}
   ;
 Slist     : Slist Stmt          			    {$$=mkNode("%LIST%",$1,$2);}
-          |                     			    {}
+          | Stmt                    			    {$$=$1;}
   ;
 Stmt      : IF'('expr')'THEN Slist ENDIF';'                 {$$=mkCondNode("%IF%",$3,NULL,$6);}
   	  | IF'('expr')'THEN Slist ELSE Slist ENDIF';'      {$$=mkCondNode("%IFELSE%",$3,$6,$8);}

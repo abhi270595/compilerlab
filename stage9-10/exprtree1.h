@@ -11,6 +11,7 @@ struct tree_node
 	int val;
     	int type;
 	struct Gsymbol *variable;
+	char *func_name;
 	char *construct;
 	struct tree_node *left;
 	struct tree_node *middle;
@@ -46,28 +47,25 @@ struct tree_node * mkFDefNode(char *name,int type,struct Argstruct *ARGLIST,stru
 	struct Gsymbol *tmp=Glookup(head,name,"%FUNCTION%");
 	struct Argstruct *temp,*temp1;
 	struct tree_node *root=(struct tree_node *)malloc(sizeof(struct tree_node));
-	if(tmp!=NULL || strcmp(name,"main")==0)
+	if(tmp!=NULL)
 	{
-		if(strcmp(name,"main")!=0)
-		{
-			temp=tmp->ARGLIST;
-			temp1=ARGLIST;
-			while(temp!=NULL && temp1!=NULL && strcmp(temp->name,temp1->name)==0 && temp->type==temp1->type)
-			{
-				temp=temp->next;
-				temp1=temp1->next;
-			}
-			if(temp!=NULL && temp1!=NULL && (strcmp(temp->name,temp1->name)!=0 || temp->type!=temp1->type))
-			{
-				printf("Syntax Error:Line No-%d, %s function's Arguments did not match to the defination\n",yylineno,name);
-       				exit(1);
-			}	
-		}
+		temp=tmp->ARGLIST;
 		temp1=ARGLIST;
+		while(temp!=NULL && temp1!=NULL && strcmp(temp->name,temp1->name)==0 && temp->type==temp1->type)
+		{
+			temp=temp->next;
+			temp1=temp1->next;
+		}
+		if(temp!=NULL && temp1!=NULL && (strcmp(temp->name,temp1->name)!=0 || temp->type!=temp1->type))
+		{
+			printf("Syntax Error:Line No-%d, %s function's Arguments did not match to the defination\n",yylineno,name);
+       			exit(1);
+		}	
 		root->construct="%FUNCTION%";
         	root->type=type;
 		root->lsymbol=lsym;
 		root->variable=tmp;
+		root->func_name=tmp->name;
 		root->ARGLIST=ARGLIST;
 		root->left=NULL;
 		root->middle=NULL;
@@ -75,6 +73,20 @@ struct tree_node * mkFDefNode(char *name,int type,struct Argstruct *ARGLIST,stru
 		lbind=1;
 		return root;
         }
+	else if(strcmp(name,"main")==0)
+	{
+		root->construct="%FUNCTION%";
+        	root->type=type;
+		root->lsymbol=lsym;
+		root->variable=NULL;
+		root->func_name=name;
+		root->ARGLIST=NULL;
+		root->left=NULL;
+		root->middle=NULL;
+		root->right=right;
+		lbind=1;
+		return root;
+	}
 	else
 	{
 		printf("Syntax Error:Line No-%d, Function %s is not defined\n",yylineno,name);
@@ -327,6 +339,7 @@ struct tree_node * ckLeafNode_Function(char *var,struct tree_node *right)
 		exit(1);
 	}
 	root->variable=temp;
+	root->ARGLIST=root->variable->ARGLIST;
     	root->type=root->variable->type;
 	root->left=NULL;
 	root->right=right;
@@ -361,11 +374,65 @@ struct tree_node * mkNode(char *construct,struct tree_node *left,struct tree_nod
 int evaluate(struct tree_node *root)
 {
 	int retval,loclabel,loclabel1;
-	if(strcmp(root->construct,"%FUNCTION%")==0)
+	if(root==NULL)
+		return 0;
+	else if(strcmp(root->construct,"%FUNCTION%")==0)
 	{
-		//lsym=root->lsymbol;
-		//printf("%s: ",root->variable->name);
-		
+		lsym=root->lsymbol;
+		printf("%s: ",root->func_name);
+		printf("PUSH BP\n");
+		printf("MOV BP, SP\n");
+		while(lsym!=NULL)
+		{
+			printf("PUSH R0\n");
+			lsym=lsym->next;
+		} 
+		lsym=root->lsymbol;
+		retval=evaluate(root->right);
+		return 0;
+	}
+	else if(strcmp(root->construct,"%FUNCTIONCALL%")==0)
+	{
+		retval=0;
+		while(retval<pre_reg)
+		{
+			printf("PUSH R%d\n",retval);
+			retval+=1;
+		}
+		retval=evaluate(root->right);
+		printf("PUSH R0\n");
+		printf("CALL %s\n",root->variable->name);
+		pre_reg+=1;
+		printf("POP R%d\n",pre_reg);
+		retval=pre_reg-1;
+		ARGLIST=root->ARGLIST;
+		while(ARGLIST!=NULL)
+		{
+			printf("POP R%d\n",pre_reg+1);
+			ARGLIST=ARGLIST->next;
+		}
+		while(retval>=0)
+		{
+			printf("POP R%d\n",retval);
+			retval-=1;
+		}
+		return 0;
+	}
+	else if(strcmp(root->construct,"%RET%")==0)
+	{
+		retval=evaluate(root->right);
+		printf("MOV R%d, BP\n",pre_reg+1);
+		printf("MOV R%d, %d\n",pre_reg+2,-2);
+		printf("ADD R%d, R%d\n",pre_reg+1,pre_reg+2);
+		printf("MOV [R%d], R%d\n",pre_reg+1,pre_reg);
+		while(lsym!=NULL)
+		{
+			printf("POP R%d\n",pre_reg+1);
+			lsym=lsym->next;
+		}
+		printf("POP BP\n");
+		printf("RET\n");
+		return 0;
 	}
 	else if(strcmp(root->construct,"%BODY%")==0)
 	{
@@ -377,6 +444,8 @@ int evaluate(struct tree_node *root)
 	{
 		retval=evaluate(root->left);
 		retval=evaluate(root->right);
+		printf("PUSH R%d\n",pre_reg);
+		pre_reg-=1;
 		return 0;
 	}
 	else if(strcmp(root->construct,"%LIST%")==0)
@@ -573,7 +642,14 @@ int evaluate(struct tree_node *root)
 	{
 		if(strcmp(root->left->construct,"%IDNODE%")==0)
 		{
-			printf("MOV R%d, %d\n",pre_reg,root->left->variable->binding);
+			if(root->left->lsymbol!=NULL)
+			{
+				printf("MOV R%d, BP\n",pre_reg);
+				printf("MOV R%d, %d\n",pre_reg+1,root->left->lsymbol->binding);
+				printf("ADD R%d, R%d\n",pre_reg,pre_reg+1);
+			}
+			else
+				printf("MOV R%d, %d\n",pre_reg,root->left->variable->binding);
 			pre_reg+=1;
 			retval=evaluate(root->right);
 			pre_reg-=1;
@@ -603,7 +679,15 @@ int evaluate(struct tree_node *root)
 	}
 	else if(strcmp(root->construct,"%IDNODE%")==0)	
 	{	
-		printf("MOV R%d, %d\n",pre_reg,root->variable->binding);
+		if(root->lsymbol!=NULL)
+		{
+			printf("MOV R%d, BP\n",pre_reg);
+			printf("MOV R%d, %d\n",pre_reg+1,root->lsymbol->binding);
+			printf("ADD R%d, R%d\n",pre_reg,pre_reg+1);
+		}
+		else
+			printf("MOV R%d, %d\n",pre_reg,root->variable->binding);
+		//printf("MOV R%d, %d\n",pre_reg,root->variable->binding);
 		printf("MOV R%d, [R%d]\n",pre_reg,pre_reg);
 		//return root->variable->binding[0];
 	}
@@ -627,7 +711,15 @@ int evaluate(struct tree_node *root)
 	else if(strcmp(root->construct,"%READ%")==0)
 	{
 		printf("IN R%d\n",pre_reg);
-		printf("MOV R%d, %d\n",pre_reg+1,root->variable->binding);
+		if(root->lsymbol!=NULL)
+		{
+			printf("MOV R%d, BP\n",pre_reg+1);
+			printf("MOV R%d, %d\n",pre_reg+2,root->lsymbol->binding);
+			printf("ADD R%d, R%d\n",pre_reg+1,pre_reg+2);
+		}
+		else
+			printf("MOV R%d, %d\n",pre_reg+1,root->variable->binding);
+		//printf("MOV R%d, %d\n",pre_reg+1,root->variable->binding);
 		printf("MOV [R%d], R%d\n",pre_reg+1,pre_reg);
 		//scanf("%d",&root->variable->binding[0]);
 		return 0;

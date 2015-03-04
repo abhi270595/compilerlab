@@ -71,7 +71,7 @@ Grammar
    39 retstmt: RETURN expr ';'
 
    40 Slist: Slist Stmt
-   41      | %empty
+   41      | Stmt
 
    42 Stmt: IF '(' expr ')' THEN Slist ENDIF ';'
    43     | IF '(' expr ')' THEN Slist ELSE Slist ENDIF ';'
@@ -222,7 +222,7 @@ retstmt (75)
 Slist (76)
     on left: 40 41, on right: 38 40 42 43 44
 Stmt (77)
-    on left: 42 43 44 45 46 47 48 49, on right: 40
+    on left: 42 43 44 45 46 47 48 49, on right: 40 41
 exprlist (78)
     on left: 50 51 52, on right: 50 69
 expr (79)
@@ -748,16 +748,21 @@ State 58
 
    38 body: BEGINING . Slist retstmt END
 
-    $default  reduce using rule 41 (Slist)
+    ID     shift, and go to state 66
+    READ   shift, and go to state 67
+    WRITE  shift, and go to state 68
+    IF     shift, and go to state 69
+    WHILE  shift, and go to state 70
 
-    Slist  go to state 66
+    Slist  go to state 71
+    Stmt   go to state 72
 
 
 State 59
 
    30 mainblock: INTEGER $@5 MAIN '(' ')' '{' ldefblock body . '}'
 
-    '}'  shift, and go to state 67
+    '}'  shift, and go to state 73
 
 
 State 60
@@ -766,7 +771,7 @@ State 60
 
     DECL  shift, and go to state 52
 
-    ldefblock  go to state 68
+    ldefblock  go to state 74
 
 
 State 61
@@ -780,7 +785,7 @@ State 62
 
    34 ldecl: type lidlist . ';'
 
-    ';'  shift, and go to state 69
+    ';'  shift, and go to state 75
 
 
 State 63
@@ -788,7 +793,7 @@ State 63
    35 lidlist: lid . ',' lidlist
    36        | lid .
 
-    ','  shift, and go to state 70
+    ','  shift, and go to state 76
 
     $default  reduce using rule 36 (lidlist)
 
@@ -809,322 +814,282 @@ State 65
 
 State 66
 
-   38 body: BEGINING Slist . retstmt END
-   40 Slist: Slist . Stmt
+   45 Stmt: ID . '=' expr ';'
+   46     | ID . '[' expr ']' '=' expr ';'
 
-    ID      shift, and go to state 71
-    READ    shift, and go to state 72
-    WRITE   shift, and go to state 73
-    IF      shift, and go to state 74
-    WHILE   shift, and go to state 75
-    RETURN  shift, and go to state 76
-
-    retstmt  go to state 77
-    Stmt     go to state 78
+    '='  shift, and go to state 77
+    '['  shift, and go to state 78
 
 
 State 67
+
+   47 Stmt: READ . '(' ID ')' ';'
+   48     | READ . '(' ID '[' expr ']' ')' ';'
+
+    '('  shift, and go to state 79
+
+
+State 68
+
+   49 Stmt: WRITE . '(' expr ')' ';'
+
+    '('  shift, and go to state 80
+
+
+State 69
+
+   42 Stmt: IF . '(' expr ')' THEN Slist ENDIF ';'
+   43     | IF . '(' expr ')' THEN Slist ELSE Slist ENDIF ';'
+
+    '('  shift, and go to state 81
+
+
+State 70
+
+   44 Stmt: WHILE . '(' expr ')' DO Slist ENDWHILE ';'
+
+    '('  shift, and go to state 82
+
+
+State 71
+
+   38 body: BEGINING Slist . retstmt END
+   40 Slist: Slist . Stmt
+
+    ID      shift, and go to state 66
+    READ    shift, and go to state 67
+    WRITE   shift, and go to state 68
+    IF      shift, and go to state 69
+    WHILE   shift, and go to state 70
+    RETURN  shift, and go to state 83
+
+    retstmt  go to state 84
+    Stmt     go to state 85
+
+
+State 72
+
+   41 Slist: Stmt .
+
+    $default  reduce using rule 41 (Slist)
+
+
+State 73
 
    30 mainblock: INTEGER $@5 MAIN '(' ')' '{' ldefblock body '}' .
 
     $default  reduce using rule 30 (mainblock)
 
 
-State 68
+State 74
 
    28 fdef: type $@3 ID '(' arglist ')' $@4 '{' ldefblock . body '}'
 
     BEGINING  shift, and go to state 58
 
-    body  go to state 79
+    body  go to state 86
 
 
-State 69
+State 75
 
    34 ldecl: type lidlist ';' .
 
     $default  reduce using rule 34 (ldecl)
 
 
-State 70
+State 76
 
    35 lidlist: lid ',' . lidlist
 
     ID  shift, and go to state 61
 
-    lidlist  go to state 80
+    lidlist  go to state 87
     lid      go to state 63
-
-
-State 71
-
-   45 Stmt: ID . '=' expr ';'
-   46     | ID . '[' expr ']' '=' expr ';'
-
-    '='  shift, and go to state 81
-    '['  shift, and go to state 82
-
-
-State 72
-
-   47 Stmt: READ . '(' ID ')' ';'
-   48     | READ . '(' ID '[' expr ']' ')' ';'
-
-    '('  shift, and go to state 83
-
-
-State 73
-
-   49 Stmt: WRITE . '(' expr ')' ';'
-
-    '('  shift, and go to state 84
-
-
-State 74
-
-   42 Stmt: IF . '(' expr ')' THEN Slist ENDIF ';'
-   43     | IF . '(' expr ')' THEN Slist ELSE Slist ENDIF ';'
-
-    '('  shift, and go to state 85
-
-
-State 75
-
-   44 Stmt: WHILE . '(' expr ')' DO Slist ENDWHILE ';'
-
-    '('  shift, and go to state 86
-
-
-State 76
-
-   39 retstmt: RETURN . expr ';'
-
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
-
-    expr  go to state 93
 
 
 State 77
 
-   38 body: BEGINING Slist retstmt . END
+   45 Stmt: ID '=' . expr ';'
 
-    END  shift, and go to state 94
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
+
+    expr  go to state 94
 
 
 State 78
+
+   46 Stmt: ID '[' . expr ']' '=' expr ';'
+
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
+
+    expr  go to state 95
+
+
+State 79
+
+   47 Stmt: READ '(' . ID ')' ';'
+   48     | READ '(' . ID '[' expr ']' ')' ';'
+
+    ID  shift, and go to state 96
+
+
+State 80
+
+   49 Stmt: WRITE '(' . expr ')' ';'
+
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
+
+    expr  go to state 97
+
+
+State 81
+
+   42 Stmt: IF '(' . expr ')' THEN Slist ENDIF ';'
+   43     | IF '(' . expr ')' THEN Slist ELSE Slist ENDIF ';'
+
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
+
+    expr  go to state 98
+
+
+State 82
+
+   44 Stmt: WHILE '(' . expr ')' DO Slist ENDWHILE ';'
+
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
+
+    expr  go to state 99
+
+
+State 83
+
+   39 retstmt: RETURN . expr ';'
+
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
+
+    expr  go to state 100
+
+
+State 84
+
+   38 body: BEGINING Slist retstmt . END
+
+    END  shift, and go to state 101
+
+
+State 85
 
    40 Slist: Slist Stmt .
 
     $default  reduce using rule 40 (Slist)
 
 
-State 79
+State 86
 
    28 fdef: type $@3 ID '(' arglist ')' $@4 '{' ldefblock body . '}'
 
-    '}'  shift, and go to state 95
+    '}'  shift, and go to state 102
 
 
-State 80
+State 87
 
    35 lidlist: lid ',' lidlist .
 
     $default  reduce using rule 35 (lidlist)
 
 
-State 81
-
-   45 Stmt: ID '=' . expr ';'
-
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
-
-    expr  go to state 96
-
-
-State 82
-
-   46 Stmt: ID '[' . expr ']' '=' expr ';'
-
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
-
-    expr  go to state 97
-
-
-State 83
-
-   47 Stmt: READ '(' . ID ')' ';'
-   48     | READ '(' . ID '[' expr ']' ')' ';'
-
-    ID  shift, and go to state 98
-
-
-State 84
-
-   49 Stmt: WRITE '(' . expr ')' ';'
-
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
-
-    expr  go to state 99
-
-
-State 85
-
-   42 Stmt: IF '(' . expr ')' THEN Slist ENDIF ';'
-   43     | IF '(' . expr ')' THEN Slist ELSE Slist ENDIF ';'
-
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
-
-    expr  go to state 100
-
-
-State 86
-
-   44 Stmt: WHILE '(' . expr ')' DO Slist ENDWHILE ';'
-
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
-
-    expr  go to state 101
-
-
-State 87
+State 88
 
    71 expr: NUM .
 
     $default  reduce using rule 71 (expr)
 
 
-State 88
+State 89
 
    68 expr: ID .
    69     | ID . '(' exprlist ')'
    70     | ID . '[' expr ']'
 
-    '('  shift, and go to state 102
-    '['  shift, and go to state 103
+    '('  shift, and go to state 103
+    '['  shift, and go to state 104
 
     $default  reduce using rule 68 (expr)
 
 
-State 89
+State 90
 
    72 expr: TRUE .
 
     $default  reduce using rule 72 (expr)
 
 
-State 90
+State 91
 
    73 expr: FALSE .
 
     $default  reduce using rule 73 (expr)
 
 
-State 91
+State 92
 
    61 expr: NOT . expr
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
-
-    expr  go to state 104
-
-
-State 92
-
-   67 expr: '(' . expr ')'
-
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
     expr  go to state 105
 
 
 State 93
 
-   39 retstmt: RETURN expr . ';'
-   53 expr: expr . '<' expr
-   54     | expr . '>' expr
-   55     | expr . EQUAL expr
-   56     | expr . GE expr
-   57     | expr . LE expr
-   58     | expr . NE expr
-   59     | expr . AND expr
-   60     | expr . OR expr
-   62     | expr . '+' expr
-   63     | expr . '-' expr
-   64     | expr . '/' expr
-   65     | expr . '%' expr
-   66     | expr . '*' expr
+   67 expr: '(' . expr ')'
 
-    EQUAL  shift, and go to state 106
-    GE     shift, and go to state 107
-    LE     shift, and go to state 108
-    NE     shift, and go to state 109
-    AND    shift, and go to state 110
-    OR     shift, and go to state 111
-    '<'    shift, and go to state 112
-    '>'    shift, and go to state 113
-    '+'    shift, and go to state 114
-    '-'    shift, and go to state 115
-    '*'    shift, and go to state 116
-    '/'    shift, and go to state 117
-    '%'    shift, and go to state 118
-    ';'    shift, and go to state 119
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
+
+    expr  go to state 106
 
 
 State 94
-
-   38 body: BEGINING Slist retstmt END .
-
-    $default  reduce using rule 38 (body)
-
-
-State 95
-
-   28 fdef: type $@3 ID '(' arglist ')' $@4 '{' ldefblock body '}' .
-
-    $default  reduce using rule 28 (fdef)
-
-
-State 96
 
    45 Stmt: ID '=' expr . ';'
    53 expr: expr . '<' expr
@@ -1141,23 +1106,23 @@ State 96
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    EQUAL  shift, and go to state 106
-    GE     shift, and go to state 107
-    LE     shift, and go to state 108
-    NE     shift, and go to state 109
-    AND    shift, and go to state 110
-    OR     shift, and go to state 111
-    '<'    shift, and go to state 112
-    '>'    shift, and go to state 113
-    '+'    shift, and go to state 114
-    '-'    shift, and go to state 115
-    '*'    shift, and go to state 116
-    '/'    shift, and go to state 117
-    '%'    shift, and go to state 118
+    EQUAL  shift, and go to state 107
+    GE     shift, and go to state 108
+    LE     shift, and go to state 109
+    NE     shift, and go to state 110
+    AND    shift, and go to state 111
+    OR     shift, and go to state 112
+    '<'    shift, and go to state 113
+    '>'    shift, and go to state 114
+    '+'    shift, and go to state 115
+    '-'    shift, and go to state 116
+    '*'    shift, and go to state 117
+    '/'    shift, and go to state 118
+    '%'    shift, and go to state 119
     ';'    shift, and go to state 120
 
 
-State 97
+State 95
 
    46 Stmt: ID '[' expr . ']' '=' expr ';'
    53 expr: expr . '<' expr
@@ -1174,23 +1139,23 @@ State 97
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    EQUAL  shift, and go to state 106
-    GE     shift, and go to state 107
-    LE     shift, and go to state 108
-    NE     shift, and go to state 109
-    AND    shift, and go to state 110
-    OR     shift, and go to state 111
-    '<'    shift, and go to state 112
-    '>'    shift, and go to state 113
-    '+'    shift, and go to state 114
-    '-'    shift, and go to state 115
-    '*'    shift, and go to state 116
-    '/'    shift, and go to state 117
-    '%'    shift, and go to state 118
+    EQUAL  shift, and go to state 107
+    GE     shift, and go to state 108
+    LE     shift, and go to state 109
+    NE     shift, and go to state 110
+    AND    shift, and go to state 111
+    OR     shift, and go to state 112
+    '<'    shift, and go to state 113
+    '>'    shift, and go to state 114
+    '+'    shift, and go to state 115
+    '-'    shift, and go to state 116
+    '*'    shift, and go to state 117
+    '/'    shift, and go to state 118
+    '%'    shift, and go to state 119
     ']'    shift, and go to state 121
 
 
-State 98
+State 96
 
    47 Stmt: READ '(' ID . ')' ';'
    48     | READ '(' ID . '[' expr ']' ')' ';'
@@ -1199,7 +1164,7 @@ State 98
     '['  shift, and go to state 123
 
 
-State 99
+State 97
 
    49 Stmt: WRITE '(' expr . ')' ';'
    53 expr: expr . '<' expr
@@ -1216,23 +1181,23 @@ State 99
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    EQUAL  shift, and go to state 106
-    GE     shift, and go to state 107
-    LE     shift, and go to state 108
-    NE     shift, and go to state 109
-    AND    shift, and go to state 110
-    OR     shift, and go to state 111
-    '<'    shift, and go to state 112
-    '>'    shift, and go to state 113
-    '+'    shift, and go to state 114
-    '-'    shift, and go to state 115
-    '*'    shift, and go to state 116
-    '/'    shift, and go to state 117
-    '%'    shift, and go to state 118
+    EQUAL  shift, and go to state 107
+    GE     shift, and go to state 108
+    LE     shift, and go to state 109
+    NE     shift, and go to state 110
+    AND    shift, and go to state 111
+    OR     shift, and go to state 112
+    '<'    shift, and go to state 113
+    '>'    shift, and go to state 114
+    '+'    shift, and go to state 115
+    '-'    shift, and go to state 116
+    '*'    shift, and go to state 117
+    '/'    shift, and go to state 118
+    '%'    shift, and go to state 119
     ')'    shift, and go to state 124
 
 
-State 100
+State 98
 
    42 Stmt: IF '(' expr . ')' THEN Slist ENDIF ';'
    43     | IF '(' expr . ')' THEN Slist ELSE Slist ENDIF ';'
@@ -1250,23 +1215,23 @@ State 100
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    EQUAL  shift, and go to state 106
-    GE     shift, and go to state 107
-    LE     shift, and go to state 108
-    NE     shift, and go to state 109
-    AND    shift, and go to state 110
-    OR     shift, and go to state 111
-    '<'    shift, and go to state 112
-    '>'    shift, and go to state 113
-    '+'    shift, and go to state 114
-    '-'    shift, and go to state 115
-    '*'    shift, and go to state 116
-    '/'    shift, and go to state 117
-    '%'    shift, and go to state 118
+    EQUAL  shift, and go to state 107
+    GE     shift, and go to state 108
+    LE     shift, and go to state 109
+    NE     shift, and go to state 110
+    AND    shift, and go to state 111
+    OR     shift, and go to state 112
+    '<'    shift, and go to state 113
+    '>'    shift, and go to state 114
+    '+'    shift, and go to state 115
+    '-'    shift, and go to state 116
+    '*'    shift, and go to state 117
+    '/'    shift, and go to state 118
+    '%'    shift, and go to state 119
     ')'    shift, and go to state 125
 
 
-State 101
+State 99
 
    44 Stmt: WHILE '(' expr . ')' DO Slist ENDWHILE ';'
    53 expr: expr . '<' expr
@@ -1283,54 +1248,101 @@ State 101
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    EQUAL  shift, and go to state 106
-    GE     shift, and go to state 107
-    LE     shift, and go to state 108
-    NE     shift, and go to state 109
-    AND    shift, and go to state 110
-    OR     shift, and go to state 111
-    '<'    shift, and go to state 112
-    '>'    shift, and go to state 113
-    '+'    shift, and go to state 114
-    '-'    shift, and go to state 115
-    '*'    shift, and go to state 116
-    '/'    shift, and go to state 117
-    '%'    shift, and go to state 118
+    EQUAL  shift, and go to state 107
+    GE     shift, and go to state 108
+    LE     shift, and go to state 109
+    NE     shift, and go to state 110
+    AND    shift, and go to state 111
+    OR     shift, and go to state 112
+    '<'    shift, and go to state 113
+    '>'    shift, and go to state 114
+    '+'    shift, and go to state 115
+    '-'    shift, and go to state 116
+    '*'    shift, and go to state 117
+    '/'    shift, and go to state 118
+    '%'    shift, and go to state 119
     ')'    shift, and go to state 126
+
+
+State 100
+
+   39 retstmt: RETURN expr . ';'
+   53 expr: expr . '<' expr
+   54     | expr . '>' expr
+   55     | expr . EQUAL expr
+   56     | expr . GE expr
+   57     | expr . LE expr
+   58     | expr . NE expr
+   59     | expr . AND expr
+   60     | expr . OR expr
+   62     | expr . '+' expr
+   63     | expr . '-' expr
+   64     | expr . '/' expr
+   65     | expr . '%' expr
+   66     | expr . '*' expr
+
+    EQUAL  shift, and go to state 107
+    GE     shift, and go to state 108
+    LE     shift, and go to state 109
+    NE     shift, and go to state 110
+    AND    shift, and go to state 111
+    OR     shift, and go to state 112
+    '<'    shift, and go to state 113
+    '>'    shift, and go to state 114
+    '+'    shift, and go to state 115
+    '-'    shift, and go to state 116
+    '*'    shift, and go to state 117
+    '/'    shift, and go to state 118
+    '%'    shift, and go to state 119
+    ';'    shift, and go to state 127
+
+
+State 101
+
+   38 body: BEGINING Slist retstmt END .
+
+    $default  reduce using rule 38 (body)
 
 
 State 102
 
-   69 expr: ID '(' . exprlist ')'
+   28 fdef: type $@3 ID '(' arglist ')' $@4 '{' ldefblock body '}' .
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
-
-    $default  reduce using rule 52 (exprlist)
-
-    exprlist  go to state 127
-    expr      go to state 128
+    $default  reduce using rule 28 (fdef)
 
 
 State 103
 
-   70 expr: ID '[' . expr ']'
+   69 expr: ID '(' . exprlist ')'
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
-    expr  go to state 129
+    $default  reduce using rule 52 (exprlist)
+
+    exprlist  go to state 128
+    expr      go to state 129
 
 
 State 104
+
+   70 expr: ID '[' . expr ']'
+
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
+
+    expr  go to state 130
+
+
+State 105
 
    53 expr: expr . '<' expr
    54     | expr . '>' expr
@@ -1350,7 +1362,7 @@ State 104
     $default  reduce using rule 61 (expr)
 
 
-State 105
+State 106
 
    53 expr: expr . '<' expr
    54     | expr . '>' expr
@@ -1367,209 +1379,202 @@ State 105
    66     | expr . '*' expr
    67     | '(' expr . ')'
 
-    EQUAL  shift, and go to state 106
-    GE     shift, and go to state 107
-    LE     shift, and go to state 108
-    NE     shift, and go to state 109
-    AND    shift, and go to state 110
-    OR     shift, and go to state 111
-    '<'    shift, and go to state 112
-    '>'    shift, and go to state 113
-    '+'    shift, and go to state 114
-    '-'    shift, and go to state 115
-    '*'    shift, and go to state 116
-    '/'    shift, and go to state 117
-    '%'    shift, and go to state 118
-    ')'    shift, and go to state 130
-
-
-State 106
-
-   55 expr: expr EQUAL . expr
-
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
-
-    expr  go to state 131
+    EQUAL  shift, and go to state 107
+    GE     shift, and go to state 108
+    LE     shift, and go to state 109
+    NE     shift, and go to state 110
+    AND    shift, and go to state 111
+    OR     shift, and go to state 112
+    '<'    shift, and go to state 113
+    '>'    shift, and go to state 114
+    '+'    shift, and go to state 115
+    '-'    shift, and go to state 116
+    '*'    shift, and go to state 117
+    '/'    shift, and go to state 118
+    '%'    shift, and go to state 119
+    ')'    shift, and go to state 131
 
 
 State 107
 
-   56 expr: expr GE . expr
+   55 expr: expr EQUAL . expr
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
     expr  go to state 132
 
 
 State 108
 
-   57 expr: expr LE . expr
+   56 expr: expr GE . expr
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
     expr  go to state 133
 
 
 State 109
 
-   58 expr: expr NE . expr
+   57 expr: expr LE . expr
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
     expr  go to state 134
 
 
 State 110
 
-   59 expr: expr AND . expr
+   58 expr: expr NE . expr
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
     expr  go to state 135
 
 
 State 111
 
-   60 expr: expr OR . expr
+   59 expr: expr AND . expr
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
     expr  go to state 136
 
 
 State 112
 
-   53 expr: expr '<' . expr
+   60 expr: expr OR . expr
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
     expr  go to state 137
 
 
 State 113
 
-   54 expr: expr '>' . expr
+   53 expr: expr '<' . expr
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
     expr  go to state 138
 
 
 State 114
 
-   62 expr: expr '+' . expr
+   54 expr: expr '>' . expr
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
     expr  go to state 139
 
 
 State 115
 
-   63 expr: expr '-' . expr
+   62 expr: expr '+' . expr
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
     expr  go to state 140
 
 
 State 116
 
-   66 expr: expr '*' . expr
+   63 expr: expr '-' . expr
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
     expr  go to state 141
 
 
 State 117
 
-   64 expr: expr '/' . expr
+   66 expr: expr '*' . expr
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
     expr  go to state 142
 
 
 State 118
 
-   65 expr: expr '%' . expr
+   64 expr: expr '/' . expr
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
     expr  go to state 143
 
 
 State 119
 
-   39 retstmt: RETURN expr ';' .
+   65 expr: expr '%' . expr
 
-    $default  reduce using rule 39 (retstmt)
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
+
+    expr  go to state 144
 
 
 State 120
@@ -1583,35 +1588,35 @@ State 121
 
    46 Stmt: ID '[' expr ']' . '=' expr ';'
 
-    '='  shift, and go to state 144
+    '='  shift, and go to state 145
 
 
 State 122
 
    47 Stmt: READ '(' ID ')' . ';'
 
-    ';'  shift, and go to state 145
+    ';'  shift, and go to state 146
 
 
 State 123
 
    48 Stmt: READ '(' ID '[' . expr ']' ')' ';'
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
-    expr  go to state 146
+    expr  go to state 147
 
 
 State 124
 
    49 Stmt: WRITE '(' expr ')' . ';'
 
-    ';'  shift, and go to state 147
+    ';'  shift, and go to state 148
 
 
 State 125
@@ -1619,26 +1624,33 @@ State 125
    42 Stmt: IF '(' expr ')' . THEN Slist ENDIF ';'
    43     | IF '(' expr ')' . THEN Slist ELSE Slist ENDIF ';'
 
-    THEN  shift, and go to state 148
+    THEN  shift, and go to state 149
 
 
 State 126
 
    44 Stmt: WHILE '(' expr ')' . DO Slist ENDWHILE ';'
 
-    DO  shift, and go to state 149
+    DO  shift, and go to state 150
 
 
 State 127
 
-   50 exprlist: exprlist . ',' expr
-   69 expr: ID '(' exprlist . ')'
+   39 retstmt: RETURN expr ';' .
 
-    ','  shift, and go to state 150
-    ')'  shift, and go to state 151
+    $default  reduce using rule 39 (retstmt)
 
 
 State 128
+
+   50 exprlist: exprlist . ',' expr
+   69 expr: ID '(' exprlist . ')'
+
+    ','  shift, and go to state 151
+    ')'  shift, and go to state 152
+
+
+State 129
 
    51 exprlist: expr .
    53 expr: expr . '<' expr
@@ -1655,24 +1667,24 @@ State 128
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    EQUAL  shift, and go to state 106
-    GE     shift, and go to state 107
-    LE     shift, and go to state 108
-    NE     shift, and go to state 109
-    AND    shift, and go to state 110
-    OR     shift, and go to state 111
-    '<'    shift, and go to state 112
-    '>'    shift, and go to state 113
-    '+'    shift, and go to state 114
-    '-'    shift, and go to state 115
-    '*'    shift, and go to state 116
-    '/'    shift, and go to state 117
-    '%'    shift, and go to state 118
+    EQUAL  shift, and go to state 107
+    GE     shift, and go to state 108
+    LE     shift, and go to state 109
+    NE     shift, and go to state 110
+    AND    shift, and go to state 111
+    OR     shift, and go to state 112
+    '<'    shift, and go to state 113
+    '>'    shift, and go to state 114
+    '+'    shift, and go to state 115
+    '-'    shift, and go to state 116
+    '*'    shift, and go to state 117
+    '/'    shift, and go to state 118
+    '%'    shift, and go to state 119
 
     $default  reduce using rule 51 (exprlist)
 
 
-State 129
+State 130
 
    53 expr: expr . '<' expr
    54     | expr . '>' expr
@@ -1689,30 +1701,30 @@ State 129
    66     | expr . '*' expr
    70     | ID '[' expr . ']'
 
-    EQUAL  shift, and go to state 106
-    GE     shift, and go to state 107
-    LE     shift, and go to state 108
-    NE     shift, and go to state 109
-    AND    shift, and go to state 110
-    OR     shift, and go to state 111
-    '<'    shift, and go to state 112
-    '>'    shift, and go to state 113
-    '+'    shift, and go to state 114
-    '-'    shift, and go to state 115
-    '*'    shift, and go to state 116
-    '/'    shift, and go to state 117
-    '%'    shift, and go to state 118
-    ']'    shift, and go to state 152
+    EQUAL  shift, and go to state 107
+    GE     shift, and go to state 108
+    LE     shift, and go to state 109
+    NE     shift, and go to state 110
+    AND    shift, and go to state 111
+    OR     shift, and go to state 112
+    '<'    shift, and go to state 113
+    '>'    shift, and go to state 114
+    '+'    shift, and go to state 115
+    '-'    shift, and go to state 116
+    '*'    shift, and go to state 117
+    '/'    shift, and go to state 118
+    '%'    shift, and go to state 119
+    ']'    shift, and go to state 153
 
 
-State 130
+State 131
 
    67 expr: '(' expr ')' .
 
     $default  reduce using rule 67 (expr)
 
 
-State 131
+State 132
 
    53 expr: expr . '<' expr
    54     | expr . '>' expr
@@ -1729,20 +1741,20 @@ State 131
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    GE   shift, and go to state 107
-    LE   shift, and go to state 108
-    '<'  shift, and go to state 112
-    '>'  shift, and go to state 113
-    '+'  shift, and go to state 114
-    '-'  shift, and go to state 115
-    '*'  shift, and go to state 116
-    '/'  shift, and go to state 117
-    '%'  shift, and go to state 118
+    GE   shift, and go to state 108
+    LE   shift, and go to state 109
+    '<'  shift, and go to state 113
+    '>'  shift, and go to state 114
+    '+'  shift, and go to state 115
+    '-'  shift, and go to state 116
+    '*'  shift, and go to state 117
+    '/'  shift, and go to state 118
+    '%'  shift, and go to state 119
 
     $default  reduce using rule 55 (expr)
 
 
-State 132
+State 133
 
    53 expr: expr . '<' expr
    54     | expr . '>' expr
@@ -1759,16 +1771,16 @@ State 132
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    '+'  shift, and go to state 114
-    '-'  shift, and go to state 115
-    '*'  shift, and go to state 116
-    '/'  shift, and go to state 117
-    '%'  shift, and go to state 118
+    '+'  shift, and go to state 115
+    '-'  shift, and go to state 116
+    '*'  shift, and go to state 117
+    '/'  shift, and go to state 118
+    '%'  shift, and go to state 119
 
     $default  reduce using rule 56 (expr)
 
 
-State 133
+State 134
 
    53 expr: expr . '<' expr
    54     | expr . '>' expr
@@ -1785,16 +1797,16 @@ State 133
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    '+'  shift, and go to state 114
-    '-'  shift, and go to state 115
-    '*'  shift, and go to state 116
-    '/'  shift, and go to state 117
-    '%'  shift, and go to state 118
+    '+'  shift, and go to state 115
+    '-'  shift, and go to state 116
+    '*'  shift, and go to state 117
+    '/'  shift, and go to state 118
+    '%'  shift, and go to state 119
 
     $default  reduce using rule 57 (expr)
 
 
-State 134
+State 135
 
    53 expr: expr . '<' expr
    54     | expr . '>' expr
@@ -1811,20 +1823,20 @@ State 134
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    GE   shift, and go to state 107
-    LE   shift, and go to state 108
-    '<'  shift, and go to state 112
-    '>'  shift, and go to state 113
-    '+'  shift, and go to state 114
-    '-'  shift, and go to state 115
-    '*'  shift, and go to state 116
-    '/'  shift, and go to state 117
-    '%'  shift, and go to state 118
+    GE   shift, and go to state 108
+    LE   shift, and go to state 109
+    '<'  shift, and go to state 113
+    '>'  shift, and go to state 114
+    '+'  shift, and go to state 115
+    '-'  shift, and go to state 116
+    '*'  shift, and go to state 117
+    '/'  shift, and go to state 118
+    '%'  shift, and go to state 119
 
     $default  reduce using rule 58 (expr)
 
 
-State 135
+State 136
 
    53 expr: expr . '<' expr
    54     | expr . '>' expr
@@ -1841,22 +1853,22 @@ State 135
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    EQUAL  shift, and go to state 106
-    GE     shift, and go to state 107
-    LE     shift, and go to state 108
-    NE     shift, and go to state 109
-    '<'    shift, and go to state 112
-    '>'    shift, and go to state 113
-    '+'    shift, and go to state 114
-    '-'    shift, and go to state 115
-    '*'    shift, and go to state 116
-    '/'    shift, and go to state 117
-    '%'    shift, and go to state 118
+    EQUAL  shift, and go to state 107
+    GE     shift, and go to state 108
+    LE     shift, and go to state 109
+    NE     shift, and go to state 110
+    '<'    shift, and go to state 113
+    '>'    shift, and go to state 114
+    '+'    shift, and go to state 115
+    '-'    shift, and go to state 116
+    '*'    shift, and go to state 117
+    '/'    shift, and go to state 118
+    '%'    shift, and go to state 119
 
     $default  reduce using rule 59 (expr)
 
 
-State 136
+State 137
 
    53 expr: expr . '<' expr
    54     | expr . '>' expr
@@ -1873,23 +1885,23 @@ State 136
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    EQUAL  shift, and go to state 106
-    GE     shift, and go to state 107
-    LE     shift, and go to state 108
-    NE     shift, and go to state 109
-    AND    shift, and go to state 110
-    '<'    shift, and go to state 112
-    '>'    shift, and go to state 113
-    '+'    shift, and go to state 114
-    '-'    shift, and go to state 115
-    '*'    shift, and go to state 116
-    '/'    shift, and go to state 117
-    '%'    shift, and go to state 118
+    EQUAL  shift, and go to state 107
+    GE     shift, and go to state 108
+    LE     shift, and go to state 109
+    NE     shift, and go to state 110
+    AND    shift, and go to state 111
+    '<'    shift, and go to state 113
+    '>'    shift, and go to state 114
+    '+'    shift, and go to state 115
+    '-'    shift, and go to state 116
+    '*'    shift, and go to state 117
+    '/'    shift, and go to state 118
+    '%'    shift, and go to state 119
 
     $default  reduce using rule 60 (expr)
 
 
-State 137
+State 138
 
    53 expr: expr . '<' expr
    53     | expr '<' expr .
@@ -1906,16 +1918,16 @@ State 137
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    '+'  shift, and go to state 114
-    '-'  shift, and go to state 115
-    '*'  shift, and go to state 116
-    '/'  shift, and go to state 117
-    '%'  shift, and go to state 118
+    '+'  shift, and go to state 115
+    '-'  shift, and go to state 116
+    '*'  shift, and go to state 117
+    '/'  shift, and go to state 118
+    '%'  shift, and go to state 119
 
     $default  reduce using rule 53 (expr)
 
 
-State 138
+State 139
 
    53 expr: expr . '<' expr
    54     | expr . '>' expr
@@ -1932,16 +1944,16 @@ State 138
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    '+'  shift, and go to state 114
-    '-'  shift, and go to state 115
-    '*'  shift, and go to state 116
-    '/'  shift, and go to state 117
-    '%'  shift, and go to state 118
+    '+'  shift, and go to state 115
+    '-'  shift, and go to state 116
+    '*'  shift, and go to state 117
+    '/'  shift, and go to state 118
+    '%'  shift, and go to state 119
 
     $default  reduce using rule 54 (expr)
 
 
-State 139
+State 140
 
    53 expr: expr . '<' expr
    54     | expr . '>' expr
@@ -1958,14 +1970,14 @@ State 139
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    '*'  shift, and go to state 116
-    '/'  shift, and go to state 117
-    '%'  shift, and go to state 118
+    '*'  shift, and go to state 117
+    '/'  shift, and go to state 118
+    '%'  shift, and go to state 119
 
     $default  reduce using rule 62 (expr)
 
 
-State 140
+State 141
 
    53 expr: expr . '<' expr
    54     | expr . '>' expr
@@ -1982,14 +1994,14 @@ State 140
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    '*'  shift, and go to state 116
-    '/'  shift, and go to state 117
-    '%'  shift, and go to state 118
+    '*'  shift, and go to state 117
+    '/'  shift, and go to state 118
+    '%'  shift, and go to state 119
 
     $default  reduce using rule 63 (expr)
 
 
-State 141
+State 142
 
    53 expr: expr . '<' expr
    54     | expr . '>' expr
@@ -2009,7 +2021,7 @@ State 141
     $default  reduce using rule 66 (expr)
 
 
-State 142
+State 143
 
    53 expr: expr . '<' expr
    54     | expr . '>' expr
@@ -2029,7 +2041,7 @@ State 142
     $default  reduce using rule 64 (expr)
 
 
-State 143
+State 144
 
    53 expr: expr . '<' expr
    54     | expr . '>' expr
@@ -2049,28 +2061,28 @@ State 143
     $default  reduce using rule 65 (expr)
 
 
-State 144
+State 145
 
    46 Stmt: ID '[' expr ']' '=' . expr ';'
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
 
-    expr  go to state 153
+    expr  go to state 154
 
 
-State 145
+State 146
 
    47 Stmt: READ '(' ID ')' ';' .
 
     $default  reduce using rule 47 (Stmt)
 
 
-State 146
+State 147
 
    48 Stmt: READ '(' ID '[' expr . ']' ')' ';'
    53 expr: expr . '<' expr
@@ -2087,77 +2099,87 @@ State 146
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    EQUAL  shift, and go to state 106
-    GE     shift, and go to state 107
-    LE     shift, and go to state 108
-    NE     shift, and go to state 109
-    AND    shift, and go to state 110
-    OR     shift, and go to state 111
-    '<'    shift, and go to state 112
-    '>'    shift, and go to state 113
-    '+'    shift, and go to state 114
-    '-'    shift, and go to state 115
-    '*'    shift, and go to state 116
-    '/'    shift, and go to state 117
-    '%'    shift, and go to state 118
-    ']'    shift, and go to state 154
+    EQUAL  shift, and go to state 107
+    GE     shift, and go to state 108
+    LE     shift, and go to state 109
+    NE     shift, and go to state 110
+    AND    shift, and go to state 111
+    OR     shift, and go to state 112
+    '<'    shift, and go to state 113
+    '>'    shift, and go to state 114
+    '+'    shift, and go to state 115
+    '-'    shift, and go to state 116
+    '*'    shift, and go to state 117
+    '/'    shift, and go to state 118
+    '%'    shift, and go to state 119
+    ']'    shift, and go to state 155
 
 
-State 147
+State 148
 
    49 Stmt: WRITE '(' expr ')' ';' .
 
     $default  reduce using rule 49 (Stmt)
 
 
-State 148
+State 149
 
    42 Stmt: IF '(' expr ')' THEN . Slist ENDIF ';'
    43     | IF '(' expr ')' THEN . Slist ELSE Slist ENDIF ';'
 
-    $default  reduce using rule 41 (Slist)
-
-    Slist  go to state 155
-
-
-State 149
-
-   44 Stmt: WHILE '(' expr ')' DO . Slist ENDWHILE ';'
-
-    $default  reduce using rule 41 (Slist)
+    ID     shift, and go to state 66
+    READ   shift, and go to state 67
+    WRITE  shift, and go to state 68
+    IF     shift, and go to state 69
+    WHILE  shift, and go to state 70
 
     Slist  go to state 156
+    Stmt   go to state 72
 
 
 State 150
 
-   50 exprlist: exprlist ',' . expr
+   44 Stmt: WHILE '(' expr ')' DO . Slist ENDWHILE ';'
 
-    NUM    shift, and go to state 87
-    ID     shift, and go to state 88
-    TRUE   shift, and go to state 89
-    FALSE  shift, and go to state 90
-    NOT    shift, and go to state 91
-    '('    shift, and go to state 92
+    ID     shift, and go to state 66
+    READ   shift, and go to state 67
+    WRITE  shift, and go to state 68
+    IF     shift, and go to state 69
+    WHILE  shift, and go to state 70
 
-    expr  go to state 157
+    Slist  go to state 157
+    Stmt   go to state 72
 
 
 State 151
+
+   50 exprlist: exprlist ',' . expr
+
+    NUM    shift, and go to state 88
+    ID     shift, and go to state 89
+    TRUE   shift, and go to state 90
+    FALSE  shift, and go to state 91
+    NOT    shift, and go to state 92
+    '('    shift, and go to state 93
+
+    expr  go to state 158
+
+
+State 152
 
    69 expr: ID '(' exprlist ')' .
 
     $default  reduce using rule 69 (expr)
 
 
-State 152
+State 153
 
    70 expr: ID '[' expr ']' .
 
     $default  reduce using rule 70 (expr)
 
 
-State 153
+State 154
 
    46 Stmt: ID '[' expr ']' '=' expr . ';'
    53 expr: expr . '<' expr
@@ -2174,62 +2196,62 @@ State 153
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    EQUAL  shift, and go to state 106
-    GE     shift, and go to state 107
-    LE     shift, and go to state 108
-    NE     shift, and go to state 109
-    AND    shift, and go to state 110
-    OR     shift, and go to state 111
-    '<'    shift, and go to state 112
-    '>'    shift, and go to state 113
-    '+'    shift, and go to state 114
-    '-'    shift, and go to state 115
-    '*'    shift, and go to state 116
-    '/'    shift, and go to state 117
-    '%'    shift, and go to state 118
-    ';'    shift, and go to state 158
-
-
-State 154
-
-   48 Stmt: READ '(' ID '[' expr ']' . ')' ';'
-
-    ')'  shift, and go to state 159
+    EQUAL  shift, and go to state 107
+    GE     shift, and go to state 108
+    LE     shift, and go to state 109
+    NE     shift, and go to state 110
+    AND    shift, and go to state 111
+    OR     shift, and go to state 112
+    '<'    shift, and go to state 113
+    '>'    shift, and go to state 114
+    '+'    shift, and go to state 115
+    '-'    shift, and go to state 116
+    '*'    shift, and go to state 117
+    '/'    shift, and go to state 118
+    '%'    shift, and go to state 119
+    ';'    shift, and go to state 159
 
 
 State 155
 
-   40 Slist: Slist . Stmt
-   42 Stmt: IF '(' expr ')' THEN Slist . ENDIF ';'
-   43     | IF '(' expr ')' THEN Slist . ELSE Slist ENDIF ';'
+   48 Stmt: READ '(' ID '[' expr ']' . ')' ';'
 
-    ID     shift, and go to state 71
-    READ   shift, and go to state 72
-    WRITE  shift, and go to state 73
-    IF     shift, and go to state 74
-    ELSE   shift, and go to state 160
-    ENDIF  shift, and go to state 161
-    WHILE  shift, and go to state 75
-
-    Stmt  go to state 78
+    ')'  shift, and go to state 160
 
 
 State 156
 
    40 Slist: Slist . Stmt
-   44 Stmt: WHILE '(' expr ')' DO Slist . ENDWHILE ';'
+   42 Stmt: IF '(' expr ')' THEN Slist . ENDIF ';'
+   43     | IF '(' expr ')' THEN Slist . ELSE Slist ENDIF ';'
 
-    ID        shift, and go to state 71
-    READ      shift, and go to state 72
-    WRITE     shift, and go to state 73
-    IF        shift, and go to state 74
-    WHILE     shift, and go to state 75
-    ENDWHILE  shift, and go to state 162
+    ID     shift, and go to state 66
+    READ   shift, and go to state 67
+    WRITE  shift, and go to state 68
+    IF     shift, and go to state 69
+    ELSE   shift, and go to state 161
+    ENDIF  shift, and go to state 162
+    WHILE  shift, and go to state 70
 
-    Stmt  go to state 78
+    Stmt  go to state 85
 
 
 State 157
+
+   40 Slist: Slist . Stmt
+   44 Stmt: WHILE '(' expr ')' DO Slist . ENDWHILE ';'
+
+    ID        shift, and go to state 66
+    READ      shift, and go to state 67
+    WRITE     shift, and go to state 68
+    IF        shift, and go to state 69
+    WHILE     shift, and go to state 70
+    ENDWHILE  shift, and go to state 163
+
+    Stmt  go to state 85
+
+
+State 158
 
    50 exprlist: exprlist ',' expr .
    53 expr: expr . '<' expr
@@ -2246,104 +2268,109 @@ State 157
    65     | expr . '%' expr
    66     | expr . '*' expr
 
-    EQUAL  shift, and go to state 106
-    GE     shift, and go to state 107
-    LE     shift, and go to state 108
-    NE     shift, and go to state 109
-    AND    shift, and go to state 110
-    OR     shift, and go to state 111
-    '<'    shift, and go to state 112
-    '>'    shift, and go to state 113
-    '+'    shift, and go to state 114
-    '-'    shift, and go to state 115
-    '*'    shift, and go to state 116
-    '/'    shift, and go to state 117
-    '%'    shift, and go to state 118
+    EQUAL  shift, and go to state 107
+    GE     shift, and go to state 108
+    LE     shift, and go to state 109
+    NE     shift, and go to state 110
+    AND    shift, and go to state 111
+    OR     shift, and go to state 112
+    '<'    shift, and go to state 113
+    '>'    shift, and go to state 114
+    '+'    shift, and go to state 115
+    '-'    shift, and go to state 116
+    '*'    shift, and go to state 117
+    '/'    shift, and go to state 118
+    '%'    shift, and go to state 119
 
     $default  reduce using rule 50 (exprlist)
 
 
-State 158
+State 159
 
    46 Stmt: ID '[' expr ']' '=' expr ';' .
 
     $default  reduce using rule 46 (Stmt)
 
 
-State 159
+State 160
 
    48 Stmt: READ '(' ID '[' expr ']' ')' . ';'
 
-    ';'  shift, and go to state 163
-
-
-State 160
-
-   43 Stmt: IF '(' expr ')' THEN Slist ELSE . Slist ENDIF ';'
-
-    $default  reduce using rule 41 (Slist)
-
-    Slist  go to state 164
+    ';'  shift, and go to state 164
 
 
 State 161
 
-   42 Stmt: IF '(' expr ')' THEN Slist ENDIF . ';'
+   43 Stmt: IF '(' expr ')' THEN Slist ELSE . Slist ENDIF ';'
 
-    ';'  shift, and go to state 165
+    ID     shift, and go to state 66
+    READ   shift, and go to state 67
+    WRITE  shift, and go to state 68
+    IF     shift, and go to state 69
+    WHILE  shift, and go to state 70
+
+    Slist  go to state 165
+    Stmt   go to state 72
 
 
 State 162
 
-   44 Stmt: WHILE '(' expr ')' DO Slist ENDWHILE . ';'
+   42 Stmt: IF '(' expr ')' THEN Slist ENDIF . ';'
 
     ';'  shift, and go to state 166
 
 
 State 163
 
+   44 Stmt: WHILE '(' expr ')' DO Slist ENDWHILE . ';'
+
+    ';'  shift, and go to state 167
+
+
+State 164
+
    48 Stmt: READ '(' ID '[' expr ']' ')' ';' .
 
     $default  reduce using rule 48 (Stmt)
 
 
-State 164
+State 165
 
    40 Slist: Slist . Stmt
    43 Stmt: IF '(' expr ')' THEN Slist ELSE Slist . ENDIF ';'
 
-    ID     shift, and go to state 71
-    READ   shift, and go to state 72
-    WRITE  shift, and go to state 73
-    IF     shift, and go to state 74
-    ENDIF  shift, and go to state 167
-    WHILE  shift, and go to state 75
+    ID     shift, and go to state 66
+    READ   shift, and go to state 67
+    WRITE  shift, and go to state 68
+    IF     shift, and go to state 69
+    ENDIF  shift, and go to state 168
+    WHILE  shift, and go to state 70
 
-    Stmt  go to state 78
+    Stmt  go to state 85
 
 
-State 165
+State 166
 
    42 Stmt: IF '(' expr ')' THEN Slist ENDIF ';' .
 
     $default  reduce using rule 42 (Stmt)
 
 
-State 166
+State 167
 
    44 Stmt: WHILE '(' expr ')' DO Slist ENDWHILE ';' .
 
     $default  reduce using rule 44 (Stmt)
 
 
-State 167
+State 168
 
    43 Stmt: IF '(' expr ')' THEN Slist ELSE Slist ENDIF . ';'
 
-    ';'  shift, and go to state 168
+    ';'  shift, and go to state 169
 
 
-State 168
+State 169
 
    43 Stmt: IF '(' expr ')' THEN Slist ELSE Slist ENDIF ';' .
 
