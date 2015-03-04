@@ -71,7 +71,7 @@ void Ginstall(char *name,int type,int size,char *id_type,struct Argstruct *ARGLI
     }
     else
     {
-        printf("Syntax Error:Line No-%d, Duplicating Name for Variables\n",yylineno);
+        printf("Syntax Error:Line No-%d, Duplicating Name for Variables or Functions\n",yylineno);
         exit(1);
     }
 }
@@ -93,6 +93,7 @@ void Arginstall(char *name,int type)
 {
     if(Arglookup(ARGLIST,name)==NULL)
     {
+	//printf("%s\n",name);
     	struct Argstruct *temp=(struct Argstruct *)malloc(sizeof(struct Argstruct));
     	temp->name=name;
     	temp->type=type;
@@ -101,6 +102,7 @@ void Arginstall(char *name,int type)
     }
     else
     {
+	//printf("%s\n",name);
 	printf("Syntax Error:Line No-%d, Duplicating Name for Variables in argument list\n",yylineno);
         exit(1);
     }

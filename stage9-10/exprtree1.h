@@ -22,8 +22,15 @@ struct tree_node
 int pre_reg=0;
 int label=1;
 
-void insertlocal(struct Argstruct *ARGLIST)
+void insertlocal(char *name,struct Argstruct *ARGLIST)
 {
+	struct Gsymbol *tmp=Glookup(head,name,"%FUNCTION%");
+	if(tmp->isdef!=0)
+	{
+		printf("Syntax Error:Line No-%d, Function %s is already defined\n",yylineno,name);
+       		exit(1);
+	}
+	tmp->isdef=1;
 	struct Argstruct *temp1=ARGLIST;
 	int binding=-3;
 	while(temp1!=NULL)
@@ -55,12 +62,6 @@ struct tree_node * mkFDefNode(char *name,int type,struct Argstruct *ARGLIST,stru
 				printf("Syntax Error:Line No-%d, %s function's Arguments did not match to the defination\n",yylineno,name);
        				exit(1);
 			}	
-			if(tmp->isdef!=0)
-			{
-				printf("Syntax Error:Line No-%d, Function %s is already defined\n",yylineno,name);
-       				exit(1);
-			}
-			tmp->isdef=1;
 		}
 		temp1=ARGLIST;
 		root->construct="%FUNCTION%";

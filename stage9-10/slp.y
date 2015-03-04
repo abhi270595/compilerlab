@@ -15,7 +15,7 @@
 
 %token <ival> NUM
 %token <var>  ID READ WRITE IF THEN ELSE ENDIF WHILE DO ENDWHILE INTEGER BOOLEAN DECL ENDDECL BEGINING END MAIN RETURN EQUAL TRUE FALSE GE LE NE AND OR NOT 
-%type <nptr> Slist Stmt expr total gdefblock gdeflist gdecl type gidlist gid arglist arg argidlist argid fdeflist fdef mainblock ldefblock ldeflist ldecl lidlist lid body retstmt exprlist
+%type <nptr> Slist Stmt expr total gdefblock gdeflist gdecl type gidlist gid arglist argglist arg argidlist argid fdeflist fdef mainblock ldefblock ldeflist ldecl lidlist lid body retstmt exprlist
 
 %left  ','
 %right '='
@@ -48,10 +48,13 @@ gidlist   : gid','gidlist                                   {}
           | gid                                             {}
   ;
 gid	  : ID                                              {Ginstall($1,datatype,1,"%ID%",NULL);}
-	  | ID{retvaltype=datatype;}'('arglist')'           {Ginstall($1,retvaltype,1,"%FUNCTION%",ARGLIST); ARGLIST=NULL;}
+	  | ID{retvaltype=datatype;}'('arglist')'           {Ginstall($1,retvaltype,1,"%FUNCTION%",ARGLIST); ARGLIST=NULL; datatype=retvaltype;}
           | ID'['NUM']'                                     {Ginstall($1,datatype,$3,"%ARR%",NULL);}
   ;
-arglist   : arg arglist                                     {}
+arglist   : argglist                                        {}
+          |                                                 {}
+  ;
+argglist  : arg argglist                                    {}
           | type argidlist                                  {}
   ;
 arg       : type argidlist';'                               {}
@@ -64,9 +67,9 @@ argid     : ID                                              {Arginstall($1,datat
 fdeflist  :  fdeflist fdef      		            {}
 	  |                                                 {}
   ;
-fdef      : type{retvaltype=datatype;}ID'('arglist')'{insertlocal(ARGLIST);}'{'ldefblock body'}'        {evaluate(mkFDefNode($3,retvaltype,ARGLIST,$10)); lsym=NULL;}
+fdef      : type{retvaltype=datatype;}ID'('arglist')'{insertlocal($3,ARGLIST);}'{'ldefblock body'}'        {evaluate(mkFDefNode($3,retvaltype,ARGLIST,$10)); lsym=NULL; ARGLIST=NULL; datatype=retvaltype;}
   ;
-mainblock : INTEGER{retvaltype=2;}MAIN'('')''{'ldefblock body'}'                 {evaluate(mkFDefNode("main",2,NULL,$8)); lsym=NULL;}
+mainblock : INTEGER{retvaltype=2;}MAIN'('')''{'ldefblock body'}'                 {evaluate(mkFDefNode("main",2,NULL,$8)); lsym=NULL; ARGLIST=NULL; datatype=2;}
   ;
 ldefblock : DECL ldeflist ENDDECL                           {}
   ;
