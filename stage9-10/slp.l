@@ -40,7 +40,7 @@ integer                {return INTEGER;}
 "<="                   {return LE;}
 "!="                   {return NE;}
 [ \t\n]      	       {}
-[-+*/=,{}<>;()\[\]%]   {return *yytext;}
+[-+*/=,{}<>;()\[\]&%]  {return *yytext;}
 .                      {printf("LEXICAL ERROR:Line No-%d\n",yylineno); exit(1);}
 
 %%

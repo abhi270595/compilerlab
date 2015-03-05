@@ -10,6 +10,7 @@ struct Argstruct
 {
     char *name;
     int type;
+    int id_type;
     struct Argstruct *next;
 };
 
@@ -17,6 +18,7 @@ struct Lsymbol
 {
     char *name;
     int type;
+    int id_type;
     int binding;
     struct Lsymbol *next;
 };
@@ -89,7 +91,7 @@ struct Argstruct * Arglookup(struct Argstruct *pre,char *name)
         return NULL;
 }
 
-void Arginstall(char *name,int type)
+void Arginstall(char *name,int type,int id_type)
 {
     if(Arglookup(ARGLIST,name)==NULL)
     {
@@ -97,6 +99,7 @@ void Arginstall(char *name,int type)
     	struct Argstruct *temp=(struct Argstruct *)malloc(sizeof(struct Argstruct));
     	temp->name=name;
     	temp->type=type;
+	temp->id_type=id_type;
     	temp->next=ARGLIST;
     	ARGLIST=temp;
     }
@@ -121,7 +124,7 @@ struct Lsymbol * Llookup(struct Lsymbol *pre,char *name)
         return NULL;
 }
 
-void Linstall(char *name,int type,int binding)
+void Linstall(char *name,int type,int binding,int id_type)
 {
     if(Llookup(lsym,name)==NULL)
     {
@@ -129,6 +132,7 @@ void Linstall(char *name,int type,int binding)
     	temp->name=name;
     	temp->type=type;
 	temp->binding=binding;
+	temp->id_type=id_type;
     	temp->next=lsym;
     	lsym=temp;
     }

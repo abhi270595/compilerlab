@@ -36,7 +36,7 @@ void insertlocal(char *name,struct Argstruct *ARGLIST)
 	int binding=-3;
 	while(temp1!=NULL)
 	{
-		Linstall(temp1->name,temp1->type,binding);
+		Linstall(temp1->name,temp1->type,binding,temp1->id_type);
 		binding-=1;
 		temp1=temp1->next;
 	}
@@ -379,9 +379,11 @@ int evaluate(struct tree_node *root)
 	else if(strcmp(root->construct,"%FUNCTION%")==0)
 	{
 		lsym=root->lsymbol;
+		pre_reg = 0;
 		printf("%s: ",root->func_name);
 		printf("PUSH BP\n");
 		printf("MOV BP, SP\n");
+		lsym=root->lsymbol;
 		while(lsym!=NULL)
 		{
 			printf("PUSH R0\n");
@@ -399,10 +401,36 @@ int evaluate(struct tree_node *root)
 			printf("PUSH R%d\n",retval);
 			retval+=1;
 		}
-		retval=evaluate(root->right);
+		struct Argstruct *temp=root->ARGLIST;
+		struct tree_node *temp1=root->right;
+		while(temp!=NULL && temp1!=NULL)
+		{
+			if(temp->id_type==0)
+			{
+				if(strcmp(temp1->right->construct,"%IDNODE%")==0)
+				{
+					if(temp1->right->lsymbol!=NULL)
+					{
+						printf("MOV R%d, BP\n",pre_reg);
+						printf("MOV R%d, %d\n",pre_reg+1,temp1->right->lsymbol->binding);
+						printf("ADD R%d, R%d\n",pre_reg,pre_reg+1);
+					}
+					else
+						printf("MOV R%d, %d\n",pre_reg,temp1->right->variable->binding);
+				}
+			}
+			else
+				retval=evaluate(temp1->right);
+			printf("PUSH R%d\n",pre_reg);
+			temp1=temp1->left;
+			temp=temp->next;
+		}
+		//retval=evaluate(root->right);
+		//printf("%d\n",pre_reg);
 		printf("PUSH R0\n");
 		printf("CALL %s\n",root->variable->name);
-		pre_reg+=1;
+		//printf("%d\n",pre_reg);
+		//pre_reg+=1;
 		printf("POP R%d\n",pre_reg);
 		retval=pre_reg-1;
 		ARGLIST=root->ARGLIST;
@@ -438,14 +466,6 @@ int evaluate(struct tree_node *root)
 	{
 		retval=evaluate(root->left);
 		retval=evaluate(root->right);
-		return 0;
-	}
-	else if(strcmp(root->construct,"%EXPRLIST%")==0)
-	{
-		retval=evaluate(root->left);
-		retval=evaluate(root->right);
-		printf("PUSH R%d\n",pre_reg);
-		pre_reg-=1;
 		return 0;
 	}
 	else if(strcmp(root->construct,"%LIST%")==0)
@@ -647,6 +667,8 @@ int evaluate(struct tree_node *root)
 				printf("MOV R%d, BP\n",pre_reg);
 				printf("MOV R%d, %d\n",pre_reg+1,root->left->lsymbol->binding);
 				printf("ADD R%d, R%d\n",pre_reg,pre_reg+1);
+				if(root->left->lsymbol->id_type==0)
+					printf("MOV R%d, [R%d]\n",pre_reg,pre_reg);
 			}
 			else
 				printf("MOV R%d, %d\n",pre_reg,root->left->variable->binding);
@@ -684,6 +706,8 @@ int evaluate(struct tree_node *root)
 			printf("MOV R%d, BP\n",pre_reg);
 			printf("MOV R%d, %d\n",pre_reg+1,root->lsymbol->binding);
 			printf("ADD R%d, R%d\n",pre_reg,pre_reg+1);
+			if(root->lsymbol->id_type==0)
+					printf("MOV R%d, [R%d]\n",pre_reg,pre_reg);
 		}
 		else
 			printf("MOV R%d, %d\n",pre_reg,root->variable->binding);
@@ -716,6 +740,8 @@ int evaluate(struct tree_node *root)
 			printf("MOV R%d, BP\n",pre_reg+1);
 			printf("MOV R%d, %d\n",pre_reg+2,root->lsymbol->binding);
 			printf("ADD R%d, R%d\n",pre_reg+1,pre_reg+2);
+			if(root->lsymbol->id_type==0)
+					printf("MOV R%d, [R%d]\n",pre_reg+1,pre_reg+1);
 		}
 		else
 			printf("MOV R%d, %d\n",pre_reg+1,root->variable->binding);

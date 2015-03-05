@@ -62,7 +62,8 @@ arg       : type argidlist';'                               {}
 argidlist : argid','argidlist                               {}
           | argid                                           {}
   ;
-argid     : ID                                              {Arginstall($1,datatype);}
+argid     : ID                                              {Arginstall($1,datatype,1);}
+	  | '&'ID                                           {Arginstall($2,datatype,0);}
   ;
 fdeflist  :  fdeflist fdef      		            {}
 	  |                                                 {}
@@ -81,7 +82,7 @@ ldecl     : type lidlist';'                                 {}
 lidlist   : lid','lidlist                                   {}
           | lid                                             {}
   ;
-lid       : ID						    {Linstall($1,datatype,lbind); lbind+=1;}
+lid       : ID						    {Linstall($1,datatype,lbind,1); lbind+=1;}
   ;
 body      : BEGINING Slist retstmt END                      {$$=mkNode("%BODY%",$2,$3);}
   ;
