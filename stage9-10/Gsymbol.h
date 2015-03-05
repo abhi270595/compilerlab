@@ -5,6 +5,8 @@
 #include<stdlib.h>
 
 extern yylineno;
+extern char filename[];
+extern FILE *outFile;
 
 struct Argstruct
 {
@@ -74,6 +76,7 @@ void Ginstall(char *name,int type,int size,char *id_type,struct Argstruct *ARGLI
     else
     {
         printf("Syntax Error:Line No-%d, Duplicating Name for Variables or Functions\n",yylineno);
+	remove(filename);
         exit(1);
     }
 }
@@ -95,7 +98,6 @@ void Arginstall(char *name,int type,int id_type)
 {
     if(Arglookup(ARGLIST,name)==NULL)
     {
-	//printf("%s\n",name);
     	struct Argstruct *temp=(struct Argstruct *)malloc(sizeof(struct Argstruct));
     	temp->name=name;
     	temp->type=type;
@@ -105,8 +107,8 @@ void Arginstall(char *name,int type,int id_type)
     }
     else
     {
-	//printf("%s\n",name);
 	printf("Syntax Error:Line No-%d, Duplicating Name for Variables in argument list\n",yylineno);
+	remove(filename);
         exit(1);
     }
 }
@@ -139,6 +141,7 @@ void Linstall(char *name,int type,int binding,int id_type)
     else
     {
 	printf("Syntax Error:Line No-%d, Duplicating Name for Variables in Local Symbol Table\n",yylineno);
+	remove(filename);
         exit(1);
     }
 }

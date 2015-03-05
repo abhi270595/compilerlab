@@ -4,6 +4,8 @@
 	#include "exprtree1.h"
 	extern yylineno;
 	int datatype;
+	FILE *outFile;
+	char filename[50];
 %}
 
 %union
@@ -30,11 +32,11 @@
 
 %%
 
-pgm       : {printf("START\n");}total                       {printf("hlt: HALT\n"); exit(0);}
+pgm       : {fprintf(outFile,"START\n");}total                       {fprintf(outFile,"hlt: HALT\n"); exit(0);}
   ;
 total     : gdefblock fdeflist mainblock                    {}
   ;
-gdefblock : DECL gdeflist ENDDECL                           {printf("MOV SP, %d\n",mem_loc_ptr-1); printf("MOV BP, 0\n"); printf("CALL main\n"); printf("JMP hlt\n");}
+gdefblock : DECL gdeflist ENDDECL                           {fprintf(outFile,"MOV SP, %d\n",mem_loc_ptr-1); fprintf(outFile,"MOV BP, 0\n"); fprintf(outFile,"CALL main\n"); fprintf(outFile,"JMP hlt\n");}
   ;
 gdeflist  : gdecl gdeflist                                  {}
           |                                                 {}
@@ -130,13 +132,19 @@ expr      : expr'<'expr         			    {$$=mkBoolOptNode("<",$1,$3);}
 %%
 
 yyerror()
-{printf("Syntax Error:Line No-%d, None of the Grammer rules Matched\n",yylineno); exit(1);}
+{
+	printf("Syntax Error:Line No-%d, None of the Grammer rules Matched\n",yylineno); 
+	remove(filename);
+	exit(1);
+}
 
 int main(int argc,char *argv[])
 {
 	if(argc>=2)
 	{
 		yyin=fopen(argv[1],"r");
+		outFile=fopen(argv[2],"w");
+		strcpy(filename,argv[2]);
 		yyparse();
 		fclose(yyin);
 	}
