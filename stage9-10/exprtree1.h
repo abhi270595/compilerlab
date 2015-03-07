@@ -438,6 +438,14 @@ int evaluate(struct tree_node *root)
 					else
 						fprintf(outFile,"MOV R%d, %d\n",pre_reg,temp1->right->variable->binding);
 				}
+				else if(strcmp(temp1->right->construct,"%ARRNODE%")==0)
+				{
+					retval=evaluate(temp1->right->right);
+					pre_reg+=1;
+					fprintf(outFile,"MOV R%d, %d\n",pre_reg,temp1->right->variable->binding);
+					pre_reg-=1;
+					fprintf(outFile,"ADD R%d, R%d\n",pre_reg,pre_reg+1);
+				}	
 			}
 			else
 				retval=evaluate(temp1->right);
@@ -723,7 +731,7 @@ int evaluate(struct tree_node *root)
 			fprintf(outFile,"MOV R%d, %d\n",pre_reg+1,root->lsymbol->binding);
 			fprintf(outFile,"ADD R%d, R%d\n",pre_reg,pre_reg+1);
 			if(root->lsymbol->id_type==0)
-					fprintf(outFile,"MOV R%d, [R%d]\n",pre_reg,pre_reg);
+				fprintf(outFile,"MOV R%d, [R%d]\n",pre_reg,pre_reg);
 		}
 		else
 			fprintf(outFile,"MOV R%d, %d\n",pre_reg,root->variable->binding);

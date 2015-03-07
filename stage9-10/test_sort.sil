@@ -1,7 +1,25 @@
 decl
-    integer q[100],n,i,j,swap;
+    integer q[100],n,i,j,swap(integer &x,&y);
     boolean a,b;
 enddecl
+integer swap(integer &x,&y)
+{
+	decl
+		integer temp;
+	enddecl
+	begin
+		temp=x;
+		x=y;
+		y=temp;
+		return 0;
+	end
+}
+integer main()
+{
+decl
+	integer temp;
+enddecl
+begin
 i=0;
 
 read(n);
@@ -18,9 +36,7 @@ while(i < (n-1)) do
     j = 0;
     while(j < (n-i-1)) do
         if(q[j] > q[j+1]) then
-            swap = q[j];
-            q[j] = q[j+1];
-            q[j+1] = swap;
+            temp = swap(q[j],q[j+1]);
         endif;
         j = j + 1;
     endwhile;
@@ -32,4 +48,6 @@ while(i < n) do
     write(q[i]);
     i = i + 1;
 endwhile;
-
+return 0;
+end
+}
