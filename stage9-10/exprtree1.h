@@ -35,7 +35,15 @@ void insertlocal(char *name,struct Argstruct *ARGLIST)
        		exit(1);
 	}
 	tmp->isdef=1;
-	struct Argstruct *temp1=ARGLIST;
+	struct Argstruct *prev=NULL,*current=ARGLIST,*next,*temp1;
+	while(current!=NULL)	
+	{
+		next  = current->next;  
+        	current->next = prev;   
+       	 	prev = current;
+        	current = next;
+	}
+	temp1=prev;
 	int binding=-3;
 	while(temp1!=NULL)
 	{
@@ -425,7 +433,7 @@ int evaluate(struct tree_node *root)
 		struct tree_node *temp1=root->right;
 		while(temp!=NULL && temp1!=NULL)
 		{
-			if(temp->id_type==0)
+			if(temp->id_type==0 && (temp1->right->lsymbol==NULL || temp1->right->lsymbol->id_type==1))
 			{
 				if(strcmp(temp1->right->construct,"%IDNODE%")==0)
 				{
@@ -445,6 +453,19 @@ int evaluate(struct tree_node *root)
 					fprintf(outFile,"MOV R%d, %d\n",pre_reg,temp1->right->variable->binding);
 					pre_reg-=1;
 					fprintf(outFile,"ADD R%d, R%d\n",pre_reg,pre_reg+1);
+				}	
+			}
+			else if(temp->id_type==0 && temp1->right->lsymbol->id_type==0)
+			{
+				if(strcmp(temp1->right->construct,"%IDNODE%")==0)
+				{
+					if(temp1->right->lsymbol!=NULL)
+					{
+						fprintf(outFile,"MOV R%d, BP\n",pre_reg);
+						fprintf(outFile,"MOV R%d, %d\n",pre_reg+1,temp1->right->lsymbol->binding);
+						fprintf(outFile,"ADD R%d, R%d\n",pre_reg,pre_reg+1);
+						fprintf(outFile,"MOV R%d, [R%d]\n",pre_reg,pre_reg);
+					}
 				}	
 			}
 			else

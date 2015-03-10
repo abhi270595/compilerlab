@@ -1,8 +1,8 @@
 decl
-    integer fib(integer n);
+    integer fib(integer n;boolean x);
 enddecl
 
-integer fib(integer n)
+integer fib(integer n;boolean x)
 {
     decl
         integer result;
@@ -14,7 +14,7 @@ integer fib(integer n)
             if(n == 1) then
                 result = 1;
             else
-                result = fib(n-1) + fib(n-2);
+                result = fib(n-1,x) + fib(n-2,x);
             endif;
         endif;
         return result;
@@ -28,7 +28,7 @@ integer i;
 enddecl
 begin
     read(i);
-    write(fib(i));
+    write(fib(i,TRUE));
     return 0;
 end
 }
