@@ -1500,7 +1500,7 @@ yyreduce:
 
   case 15:
 #line 53 "slp.y" /* yacc.c:1646  */
-    {Ginstall((yyvsp[-4].var),retvaltype,1,"%FUNCTION%",ARGLIST); ARGLIST=NULL; datatype=retvaltype;}
+    {Ginstall((yyvsp[-4].var),retvaltype,0,"%FUNCTION%",ARGLIST); ARGLIST=NULL; datatype=retvaltype;}
 #line 1505 "y.tab.c" /* yacc.c:1646  */
     break;
 

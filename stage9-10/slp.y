@@ -50,7 +50,7 @@ gidlist   : gid','gidlist                                   {}
           | gid                                             {}
   ;
 gid	  : ID                                              {Ginstall($1,datatype,1,"%ID%",NULL);}
-	  | ID{retvaltype=datatype;}'('arglist')'           {Ginstall($1,retvaltype,1,"%FUNCTION%",ARGLIST); ARGLIST=NULL; datatype=retvaltype;}
+	  | ID{retvaltype=datatype;}'('arglist')'           {Ginstall($1,retvaltype,0,"%FUNCTION%",ARGLIST); ARGLIST=NULL; datatype=retvaltype;}
           | ID'['NUM']'                                     {Ginstall($1,datatype,$3,"%ARR%",NULL);}
   ;
 arglist   : argglist                                        {}
