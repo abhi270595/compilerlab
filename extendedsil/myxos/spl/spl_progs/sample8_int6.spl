@@ -1,0 +1,187 @@
+// Interrupt 6 Routine
+
+// Calculating physical Address of SP
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+// Getting System Call no. from the Stack
+alias Syscall S1;
+Syscall = [physicalSP - 1];
+
+// System Calls
+
+// Implementing System Call 9 Exec(filename)
+if(Syscall == 9) then
+
+	// Getting Arguments from Stack
+	// 1. filename
+	alias filename S2;
+	filename = [physicalSP - 3];
+	
+	// Checking filename exists in the disk
+	alias fat_entry S3;      // Stores the Physical Address of FAT Entry
+	fat_entry = FAT;
+	
+	// Traversing through FAT Entry for a file with name which is present in filename variable
+	while([fat_entry]!=filename) do
+		
+		fat_entry = fat_entry + 8;    // Next filename present in FAT Entry
+		
+		if(fat_entry >= (FAT + 512)) then     // Checks if the FAT Entries are Finished or not
+			
+			[physicalSP - 2] = -1;     // Setting Return Value as -1 indicating Failure
+			ireturn;                  // Switches From Kernel Mode To User Mode
+			
+		endif;
+		
+	endwhile;
+
+	// Fetching the Basic Block Number 
+	alias BasicBlock S4;
+	BasicBlock = [fat_entry + 2];
+
+	// Load Basic Block to Scratchpad
+	load(1,BasicBlock);
+
+	// STEP 3 and STEP 4
+	
+	alias i S5;
+	i=0;
+
+	while(i < 3) do
+
+		// If Valid Bit is 1 in Auxillary Bits Value
+		if([PTBR + (i * 2) + 1] == "01" || [PTBR + (i * 2) + 1] == "11") then
+			// Decreamenting Memory Free List Entry Corresponding Address Copied above		
+			[MEM_LIST + [PTBR + (i * 2)]] = [MEM_LIST + [PTBR + (i * 2)]] - 1;          
+		endif;
+
+		// If Valid Bit is 0 in Auxillary Bits Value
+		if([PTBR + (i * 2) + 1] == "00" || [PTBR + (i * 2) + 1] == "10") then
+			
+			// If Physical Page Number field of Page Table is greater than or equal to 448
+			if([PTBR + (i * 2)] >= 448) then
+
+				// Decreamenting Disk Free List Value of the corresponding block by 1
+				[DISK_LIST + [PTBR + (i * 2)]] = [DISK_LIST + [PTBR + (i * 2)]] - 1;
+				// Storing Back Disk Free List to the Disk
+				store(6,20);
+
+			endif;
+		
+		endif;
+
+		// Copying both block Address from Basic Block to Page Table of current Process
+		[PTBR + (i * 2)] = [SCRATCHPAD + i];
+		// Setting Auxillary Bit as Invalid "00"
+		[PTBR + (i * 2) + 1] = "00";
+
+		i = i + 1;
+
+	endwhile;
+
+	// END of STEP 3 and STEP 4 
+
+	// Closing All the Files Opened by the Current Process
+	// Calculate PID of Currently Running Process
+	alias currentPID S7;
+	currentPID = (PTBR - PAGE_TABLE) / 8;
+	
+	i=0;
+	while(i < 8) do
+
+		// Storing Pointer to System Wide Open File Table Entry
+		alias SWOFT S8;
+		SWOFT = [READY_LIST + (currentPID * 32) + 15 + (i * 2)];
+
+		// Checking if there is an entry corresponding to the i
+		if(SWOFT != -1) then
+
+			// Decrementing Value of File Open Count in System Wide Open File Table
+			alias FOC S9;
+			FOC = [FILE_TABLE + (SWOFT * 2) + 1];
+			FOC = FOC - 1;
+		
+			// Updating Value in SWOFT
+			[FILE_TABLE + (SWOFT * 2) + 1] = FOC;
+	
+			// Checking if Value of File Open Count is zero or not
+			if(FOC == 0) then
+	
+				// Invalidate System Wide Open File Table By Setting FAT Index as -1
+				[FILE_TABLE + (SWOFT * 2) + 0] = -1;
+			
+			endif;
+			
+			// Invalidating the Per-Process Open File Table Entry By Setting it to -1			
+			[READY_LIST + (currentPID * 32) + 15 + (i * 2)] = -1;
+	
+		endif;
+		
+		i = i + 1;
+		
+	endwhile;
+
+	// Stack Pointer is initialized to Logical Address 3 * 512 = 1536
+	SP = 3 * 512;
+
+	// Setting 0 Value at the Top of the Stack
+	alias phySP S8;
+	phySP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+	[phySP] = 0;
+
+	// Setting Auxillary Bit of Stack for new Process as Valid "01"
+	[PTBR + 7] = "01";	
+
+	// IRET Machine Instruction
+	ireturn;
+endif;
+
+// Implementing System Call 11
+if(Syscall == 11) then
+
+	// Calculate PID of Currently Running Process
+	alias currentPID S2;
+	currentPID = (PTBR - PAGE_TABLE) / 8;
+
+	if(currentPID > -1 && currentPID < 32) then
+		
+		// Setting Return Value as Current Process PID
+		[physicalSP - 2] = currentPID;
+		// IRET Machine Instruction
+		ireturn;
+
+	endif;
+
+	// Setting Return Value as -1 Invalid PID
+	[physicalSP - 2] = -1;
+	// IRET Machine Instruction
+	ireturn;
+	
+endif;
+
+// Implementing System Call 12
+if(Syscall == 12) then
+
+	// Calculate PID of Currently Running Process
+	alias currentPID S2;
+	currentPID = (PTBR - PAGE_TABLE) / 8;
+
+	if(currentPID > -1 && currentPID < 32) then
+		
+		// PCB Value of PPID
+		alias PPID S3;
+		PPID = [READY_LIST + (currentPID * 32) + 31];      // PCB Value of PPID
+		// Setting Return Value as PID of Parent Process
+		[physicalSP - 2] = PPID;
+		// IRET Machine Instruction
+		ireturn;
+
+	endif;
+
+	// Setting Return Value as -1 Invalid PID
+	[physicalSP - 2] = -1;
+	// IRET Machine Instruction
+	ireturn;
+	
+endif;

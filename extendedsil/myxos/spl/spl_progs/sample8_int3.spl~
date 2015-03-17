@@ -1,0 +1,149 @@
+// Interrupt 3 Routine
+
+// Calculating physical Address of SP
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+// Getting System Call no. from the Stack
+alias Syscall S1;
+Syscall = [physicalSP - 1];
+
+// System Calls
+
+// Implementing System Call 6
+if(Syscall == 6) then
+
+	// Getting Arguments from Stack
+	// 1. fileDescriptor  2. newLseek
+	alias newLseek S2;
+	newLseek = [physicalSP - 3];
+	alias filedescriptor S3;
+	filedescriptor = [physicalSP - 4];
+
+	// Checking if the filedescriptor is between 0 to 7
+        if(filedescriptor < 0 || filedescriptor > 7) then
+
+                [physicalSP - 2] = -1;       // Setting Return Value as -1 indicating Failure
+                ireturn;
+
+        endif;
+		
+	// Calculate PID of Currently Running Process
+        alias currentPID S4;
+        currentPID = (PTBR - PAGE_TABLE) / 8;
+
+        // Storing Pointer to System Wide Open File Table Entry
+        alias SWOFT S5;
+        SWOFT = [READY_LIST + (currentPID * 32) + 15 + (filedescriptor * 2)];
+
+        // Checking if there is an entry corresponding to the filedescriptor
+        if(SWOFT == -1) then
+
+                [physicalSP - 2] = -1;       // Setting Return Value as -1 indicating Failure
+                ireturn;
+
+        endif;
+
+	// Storing FAT Index Corresponding to SWOFT Value
+	alias fat_index S7;
+	fat_index = [FILE_TABLE + (SWOFT * 2) + 0];    // FAT Index
+
+	// Storing File Size Corresponding to fat_index value
+	alias filesize S8;
+	filesize = [FAT + (fat_index * 8) + 1];    // File Size
+
+	// Check if the newLseek Position is between 0 to filesize
+	if(newLseek < 0 && newLseek >= filesize) then
+
+                [physicalSP - 2] = -1;       // Setting Return Value as -1 indicating Failure
+                ireturn;
+
+        endif;
+
+	// Changing the LSEEK Value to newLseek
+	[READY_LIST + (currentPID * 32) + 16 + (filedescriptor * 2)] = newLseek;
+
+	// Setting Return Value as 0 indicating Success
+        [physicalSP - 2] = 0;
+        ireturn;
+
+endif;
+
+// Implementing System Call 7
+if(Syscall == 7) then
+
+	// Getting Arguments from Stack
+	// 1. fileDescriptor  2. wordRead
+	alias wordRead S2;
+	alias filedescriptor S3;
+	filedescriptor = [physicalSP - 4];
+
+	// Checking if the filedescriptor is between 0 to 7
+        if(filedescriptor < 0 || filedescriptor > 7) then
+
+                [physicalSP - 2] = -1;       // Setting Return Value as -1 indicating Failure
+                ireturn;
+
+        endif;	
+		
+	// Calculate PID of Currently Running Process
+        alias currentPID S4;
+        currentPID = (PTBR - PAGE_TABLE) / 8;
+
+        // Storing Pointer to System Wide Open File Table Entry
+        alias SWOFT S5;
+        SWOFT = [READY_LIST + (currentPID * 32) + 15 + (filedescriptor * 2)];
+
+        // Checking if there is an entry corresponding to the filedescriptor
+        if(SWOFT == -1) then
+
+                [physicalSP - 2] = -1;       // Setting Return Value as -1 indicating Failure
+                ireturn;
+
+        endif;
+
+	// Storing LSEEK Value to Register
+	alias LSEEK S6;
+	LSEEK = [READY_LIST + (currentPID * 32) + 16 + (filedescriptor * 2)];
+
+	// Storing FAT Index Corresponding to SWOFT Value
+	alias fat_index S7;
+	fat_index = [FILE_TABLE + (SWOFT * 2) + 0];    // FAT Index
+
+	// Storing Basic Block Number Corresponding to fat_index value
+	alias basicblock S8;
+	basicblock = [FAT + (fat_index * 8) + 2];    // Basic Block	
+
+	// Loading Basic Block Information to Scratchpad
+	load(1,basicblock);	
+
+	// Storing File Size Corresponding to fat_index value
+	alias filesize S9;
+	filesize = [FAT + (fat_index * 8) + 1];    // File Size
+
+	// Check if the LSEEK Position is not equal to filesize
+	if(LSEEK == filesize) then
+
+                [physicalSP - 2] = -1;       // Setting Return Value as -1 indicating Failure
+                ireturn;
+
+        endif;
+
+	// Calculating the Block Number From Which it has to Read
+	alias memory S10;
+	memory = [(LSEEK / 512) + 512];
+
+	// Loading Block memory from disk to Main Memory
+	load(1,memory);
+
+	// Reading From Block Using Offset Calculated by LSEEK
+	[physicalSP - 3] = [(LSEEK % 512) + 512];
+
+	// Incrementing LSEEK Position by 1
+	[READY_LIST + (currentPID * 32) + 16 + (filedescriptor * 2)] = [READY_LIST + (currentPID * 32) + 16 + (filedescriptor * 2)] + 1;
+
+	// Setting Return Value as 0 indicating Success
+        [physicalSP - 2] = 0;
+        ireturn;
+
+endif;

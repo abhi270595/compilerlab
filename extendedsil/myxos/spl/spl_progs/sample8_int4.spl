@@ -1,0 +1,135 @@
+// Interrupt 4 Routine
+
+// Calculating physical Address of SP
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+// Getting System Call no. from the Stack
+alias Syscall S1;
+Syscall = [physicalSP - 1];
+
+// System Calls
+
+// Implementing System Call 5
+if(Syscall == 5) then
+
+	// Getting Arguments from Stack
+	// 1. fileDescriptor  2. wordToWrite
+	alias word S2;
+	word = [physicalSP - 3];
+	alias filedescriptor S3;
+	filedescriptor = [physicalSP - 4];
+
+	// Checking if the filedescriptor is between 0 to 7
+        if(filedescriptor < 0 || filedescriptor > 7) then
+
+                [physicalSP - 2] = -1;       // Setting Return Value as -1 indicating Failure
+                ireturn;
+
+        endif;	
+		
+	// Calculate PID of Currently Running Process
+        alias currentPID S4;
+        currentPID = (PTBR - PAGE_TABLE) / 8;
+
+        // Storing Pointer to System Wide Open File Table Entry
+        alias SWOFT S5;
+        SWOFT = [READY_LIST + (currentPID * 32) + 15 + (filedescriptor * 2)];
+
+        // Checking if there is an entry corresponding to the filedescriptor
+        if(SWOFT == -1) then
+
+                [physicalSP - 2] = -1;       // Setting Return Value as -1 indicating Failure
+                ireturn;
+
+        endif;
+
+	// Storing LSEEK Value to Register
+	alias LSEEK S6;
+	LSEEK = [READY_LIST + (currentPID * 32) + 16 + (filedescriptor * 2)];
+
+	// Storing FAT Index Corresponding to SWOFT Value
+	alias fat_index S7;
+	fat_index = [FILE_TABLE + (SWOFT * 2) + 0];    // FAT Index
+
+	// Storing Basic Block Number Corresponding to fat_index value
+	alias basicblock S8;
+	basicblock = [FAT + (fat_index * 8) + 2];    // Basic Block	
+
+	// Loading Basic Block Information to Scratchpad
+	load(1,basicblock);	
+
+	// Calculating Index of Data Block
+	alias datablock S9;
+	datablock = (LSEEK / 512) + 512;          
+
+	// Stores the Physical Address of Disk Free List Entry
+	alias memory S10;        
+
+	memory = [datablock];
+
+	// Check Whether the Entry of Data Block in the Basic Block == -1
+	if([datablock] == -1) then
+
+		// Checking for a free space in Disk Free List
+
+		// Initializing Starting Address of 6 Block or Disk Free List
+		memory = DISK_LIST;
+
+		// Traversing through Disk Free List for Free Space
+		while([memory] == 1) do
+	
+			memory = memory + 1;     // Next Entry of Disk Free List
+
+			if(memory >= (DISK_LIST + 448)) then    // Checks if the Entry of Disk Free List has come to 448
+				break;				// Because From 448 onwards Swap Area Starts and stops seeing further		
+			endif;
+
+		endwhile;	
+	
+		// If no free space
+		if(memory >= (DISK_LIST + 448)) then
+
+			[physicalSP - 2] = -1;       // Setting Return Value as -1 indicating Failure
+			ireturn;                     // Switches From Kernel Mode To User Mode
+
+		endif;
+
+		// Setting the Value of Memory to 1 in Disk Free List
+		[memory] = 1;
+	
+		// Setting the Data Block Value to the Empty Block we Found in Disk free List
+		[datablock] = memory - DISK_LIST;
+		memory = [datablock];
+	
+		// Storing Back Basic Block Information to Disk
+        	store(1,basicblock);
+
+		// Incrementing Value of Filesize by 512 in the FAT Entry
+		[FAT + (fat_index * 8) + 1] = [FAT + (fat_index * 8) + 1] + 512;
+		
+		// Updating FAT and Disk Free List in the memory back to the disk
+        	store(5,19);
+        	store(6,20);
+
+	endif;
+
+	// Loading Block From Disk to Memory to which we have to write on
+	alias block S11;
+	block = memory;		
+	load(1,block); 	
+
+	[(LSEEK % 512) + 512] = word;      // Word is written to the offset
+
+	// Storing Back block from memory to disk
+	store(1,block);
+
+	// Incrementing LSEEK Position by 1
+	LSEEK = LSEEK + 1;
+	[READY_LIST + (currentPID * 32) + 16 + (filedescriptor * 2)] = LSEEK;
+
+	// Setting Return Value as 0 indicating Success
+        [physicalSP - 2] = 0;
+        ireturn;
+
+endif;

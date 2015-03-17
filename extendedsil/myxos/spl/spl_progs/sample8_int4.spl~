@@ -1,0 +1,16 @@
+// Interrupt 1 Routine
+
+// Calculating physical Address of SP
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+// Getting System Call no. from the Stack
+alias Syscall S1;
+Syscall = [physicalSP - 1];
+
+// System Calls
+
+// Implementing System Call 1
+if(Syscall == 1) then	
+
+endif;

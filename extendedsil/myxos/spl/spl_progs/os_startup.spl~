@@ -1,0 +1,154 @@
+// OS STARTUP CODE
+
+// Loading Exception Handler
+load(7,1);
+load(8,2); 
+
+// Loading Timer Interrupt Routine to Main Memory
+load (9, 3);
+load (10, 4);
+
+// Loading FAT Entry
+load(5,19);
+
+// Loading Disk Free List
+load(6,20);
+
+// Loading Interrupt 1 Routine
+load(11,5);
+load(12,6);
+
+// Loading Interrupt 2 Routine
+load(13,7);
+load(14,8);
+
+// Loading Interrupt 3 Routine
+load(15,9);
+load(16,10);
+
+// Loading Interrupt 4 Routine
+load(17,11);
+load(18,12);
+
+// Loading Interrupt 5 Routine
+load(19,13);
+load(20,14);
+
+// Loading Interrupt 6 Routine
+load(21,15);
+load(22,16);
+
+// Loading Interrupt 7 Routine
+load(23,17);
+load(24,18);
+
+// Loading Init Process pages from disk to memory
+load(25,21);
+load(26,22);
+load(27,23);
+
+// Setting All entries of the System-Wide Open File Table must be set to invalid initially
+// FILE_TABLE is SPL predefined constant which stores the address of the System Wide Open File Table
+alias counter S0;
+counter = 0;
+while(counter < 128) do                // 64 entries, each of size 2 words
+
+	[FILE_TABLE + counter + 0] = -1;    // Set FAT Index to -1
+	[FILE_TABLE + counter + 1] =  0;    // Set File Open Count to 0
+	counter = counter + 2;             // Move to Next Entry
+	
+endwhile;
+
+// Setting some of the Values in Memory Free List as used
+counter = 0;
+while(counter < 26) do
+
+	[MEM_LIST + counter] = 1;     // Setting it as used
+	counter = counter + 1;        // Increamenting counter	
+
+endwhile;
+
+// Setting Rest of the Values in Memory Free List as unused
+while(counter < 64) do
+
+	[MEM_LIST + counter] = 0;     // Setting it as unused
+	counter = counter + 1;        // Increamenting counter
+
+endwhile;
+
+// Setting Values of SWAP AREA in Disk Free List to 0
+alias i S3;
+i=448;
+
+while(i < 512) do
+
+	[DISK_LIST + i] = 0;      // Setting SWAP AREA Values to 0
+	i = i + 1;                // Increamenting i
+
+endwhile;
+
+// Storing Back the Disk Free List to the Disk
+store(6,20);
+
+// Setting all the PCB's State Value to 0 (terminated or free)
+alias PCB_status S2;
+PCB_status = READY_LIST + 1;     // State Field of PCB's
+
+while(PCB_status < 2560) do
+
+	[PCB_status] = 0;                // Setting State to free
+	PCB_status = PCB_status + 32;    // Increamenting to next process
+
+endwhile;
+
+// PCB - Process Control Block
+
+// SETS Entry of PID as 0 Note:-READY_LIST=1536(Pre-Defined Constant)
+// Formula:- Starting Address Of PCB of a Process=1536 + (PID * 32)  
+[READY_LIST + 0] = 0;
+
+// PTBR-Page Table Base Register
+// PTBR is set to 1024 Since PID=0 Formula:- PTBR = 1024 + (PID * 8)
+PTBR = 1024;
+
+// PTLR-Page Table Length Register
+// PTLR is set to 4
+PTLR = 4;
+
+// Page Table Entries
+// Physical Page Number for Logical Page x
+// Auxiliary Information for Logical Page
+[PTBR + 0] = 21;
+[PTBR + 1] = "00";
+[PTBR + 2] = 22;
+[PTBR + 3] = "00";
+[PTBR + 4] = 23;
+[PTBR + 5] = "00";
+[PTBR + 6] = 25;
+[PTBR + 7] = "01";
+
+// STATE Field of PCB is set to 2(Running)
+[READY_LIST + 1] = 2;
+
+// Setting Parent Process of INIT Process as Itself
+[READY_LIST + 31] = 0;
+
+// Stack Pointer is initialized to Logical Address 3 * 512 = 1536
+SP = 3 * 512;
+
+// Set up the IP value for INIT in the stack
+[28 * 512] = 0;
+
+// Setting All the Pre-Processor Open File Table Entries of init process to invalid
+alias counters S1;
+counters = 15;
+while(counters < 31) do                     // 16 Entries, Each of Size 2 words
+
+	[READY_LIST + counters + 0] = -1;   // Setting Pointer to system-wide open file table entry as -1
+	[READY_LIST + counters + 1] = -1;   // Setting LSEEK position to -1
+	counters = counters + 2;            // Move to the Next Entry
+	
+endwhile;
+
+// IRET Machine Instruction
+ireturn;

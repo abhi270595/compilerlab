@@ -1,0 +1,181 @@
+// Interrupt 2 Routine
+
+// Calculating Physical Address of SP
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+// Getting System Call no. from the Stack
+alias Syscall S1;
+Syscall = [physicalSP - 1];
+
+// System Calls
+
+// Implementing System Call 2
+if(Syscall == 2) then
+	
+	// Getting Arguments from Stack
+	alias filename S2;
+	filename = [physicalSP - 3];
+	
+	// Checking filename exists in the disk
+	alias fat_entry S3;      // Stores the Physical Address of FAT Entry
+	fat_entry = FAT;
+	
+	// Traversing through FAT Entry for a file with name which is present in filename variable
+	while([fat_entry]!=filename) do
+		
+		fat_entry = fat_entry + 8;    // Next filename present in FAT Entry
+		
+		if(fat_entry >= (FAT + 512)) then     // Checks if the FAT Entries are Finished or not
+			
+			[physicalSP - 2] = -1;     // Setting Return Value as -1 indicating Failure
+			ireturn;                  // Switches From Kernel Mode To User Mode
+			
+		endif;
+		
+	endwhile;
+	
+	fat_entry = (fat_entry - FAT) / 8;      // FAT Index value calculation
+	
+	// Checking if the System-Wide Open File Table Entry for the Following FAT Index exists
+	alias Flag1 S5;                 // Flag for Indicating if the file is Already opened or there is any free Slot left for new Entry
+	alias Syswide_entry S4;			// Stores the Physical System-Wide Open File Table Entry 
+	Syswide_entry = FILE_TABLE;
+	
+	// Traversing through System-Wide Open File Table for FAT Index value stored in fat_entry
+	while(Syswide_entry < 1472 && [Syswide_entry] != fat_entry) do
+	
+		Syswide_entry = Syswide_entry + 2;   // Next System-Wide Open File Table Entry for FAT Index
+		
+	endwhile;
+	
+	// Checking if the System-Wide Open File Table Entry For FAT Index exists
+	if(Syswide_entry < 1472) then
+	
+		Flag1 = 0;
+		Syswide_entry = (Syswide_entry - FILE_TABLE) / 2;    // System-Wide Open File Table Entry Index For File which is already opened
+	
+	// If Doesnot Exist then check for a free Slot in System-Wide Open File Table
+	else
+	
+		Syswide_entry = FILE_TABLE;    // Intializing it to the start Index of System-Wide Open File Table
+	
+		// Traversing through System-Wide Open File Table for a free slot or FAT Index equal to -1
+		while(Syswide_entry < 1472 && [Syswide_entry] != -1) do
+	
+			Syswide_entry = Syswide_entry + 2;   // Next System-Wide Open File Table Entry for FAT Index
+		
+		endwhile;
+		
+		// Checking the System-Wide Open File Table For Free Slot if any 
+		if(Syswide_entry < 1472) then
+	
+			Flag1 = 1;
+			Syswide_entry = (Syswide_entry - FILE_TABLE) / 2;    // System-Wide Open File Table Entry Index For free slot
+			
+		// Returning Invalid since all the System-Wide Open File Table Entry are occupied
+		else	
+		
+			[physicalSP - 2] = -1;     // Setting Return Value as -1 indicating Failure
+			ireturn;                  // Switches From Kernel Mode To User Mode
+			
+		endif;
+	
+	endif;
+	
+	// Calculating PID for the Currently Running Process
+	alias currentPID S6;
+	currentPID = (PTBR - PAGE_TABLE) / 8;
+	
+	// Setting offset to 15 Since per-process open file Table Starts from 15 to 31
+	alias offset S7;
+	offset = 15;
+	
+	// Checking for a Free Slot in per-process open file Table
+	while(offset<=30 && [READY_LIST + (currentPID * 32) + offset] != -1) do
+	
+		offset = offset + 2;      // Next Value of per-process open file Table
+		
+	endwhile;
+	
+	// If there are no Free Slots in per-process open file Table
+	if(offset>30) then
+		
+		[physicalSP - 2] = -1;     // Setting Return Value as -1 indicating Failure
+		ireturn;                  // Switches From Kernel Mode To User Mode
+		
+	endif;
+	
+	// Changing values in per-process open file Table
+	[READY_LIST + (currentPID * 32) + offset + 0] = Syswide_entry;    // Putting FAT Index Value to the per-process open file Table 
+	[READY_LIST + (currentPID * 32) + offset + 1] = 0;                // Putting LSEEK Value as 0
+	
+	// Changing values in System-Wide Open File Table
+	if(Flag1 == 1) then 
+		
+		// If there is new entry to the System-Wide Open File Table then Change the FAT Index value
+		[(Syswide_entry * 2) + FILE_TABLE + 0] = fat_entry;        
+		
+	endif;
+	
+	[(Syswide_entry * 2) + FILE_TABLE + 1] = [(Syswide_entry * 2) + FILE_TABLE + 1] + 1;       // Incrementing File Open Count by 1
+	
+	[physicalSP - 2] = (offset - 15) / 2;     // Setting Return Value as file descriptor
+	ireturn;                  				  // Switches From Kernel Mode To User Mode
+	
+endif;
+
+// Implementing System Call 3
+if(Syscall == 3) then
+
+	// Getting Arguments from Stack
+	alias filedescriptor S2;
+	filedescriptor = [physicalSP - 3];
+
+	// Checking if the filedescriptor is between 0 to 7
+	if(filedescriptor < 0 || filedescriptor > 7) then 
+		
+		[physicalSP - 2] = -1;       // Setting Return Value as -1 indicating Failure
+		ireturn;
+
+	endif;
+
+	// Calculate PID of Currently Running Process
+	alias currentPID S3;
+	currentPID = (PTBR - PAGE_TABLE) / 8;
+
+	// Storing Pointer to System Wide Open File Table Entry
+	alias SWOFT S4;
+	SWOFT = [READY_LIST + (currentPID * 32) + 15 + (filedescriptor * 2)];
+
+	// Checking if there is an entry corresponding to the filedescriptor
+	if(SWOFT == -1) then
+
+	        [physicalSP - 2] = -1;       // Setting Return Value as -1 indicating Failure
+                ireturn;
+
+        endif;
+
+	// Decrementing Value of File Open Count in System Wide Open File Table
+	alias FOC S5;
+	FOC = [FILE_TABLE + (SWOFT * 2) + 1];
+	FOC = FOC - 1;
+
+	// Updating Value in SWOFT
+	[FILE_TABLE + (SWOFT * 2) + 1] = FOC;
+
+	// Checking if Value of File Open Count is zero or not
+	if(FOC == 0) then
+	
+		// Invalidate System Wide Open File Table By Setting FAT Index as -1
+		[FILE_TABLE + (SWOFT * 2) + 0] = -1;
+	
+	endif;
+		
+	// Invalidating the Per-Process Open File Table Entry By Setting it to -1			
+	[READY_LIST + (currentPID * 32) + 15 + (filedescriptor * 2)] = -1;
+	
+	[physicalSP - 2] = 0;       // Setting Return Value as 0 indicating Success
+        ireturn;
+
+endif;

@@ -1,0 +1,9 @@
+decl
+	integer i,j,a[100];
+enddecl
+i=12+322*0-232+234%100;
+j=i;
+write(i);
+write(a[j+234-345*0-j-234]);
+read(i);
+write(i);

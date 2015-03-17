@@ -1,0 +1,133 @@
+// Interrupt 1 Routine
+
+// Calculating physical Address of SP
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+// Getting System Call no. from the Stack
+alias Syscall S1;
+Syscall = [physicalSP - 1];
+
+// System Calls
+
+// Implementing System Calls 1
+if(Syscall == 1) then	
+	
+	// Getting Arguments from the Stack
+	alias filename S2;
+	filename = [physicalSP - 3];	
+
+	// Checking for a free space in Disk Free List
+
+	// Initializing Starting Address of 6 Block or Disk Free List
+	alias memory S3;          // Stores the Physical Address of Disk Free List Entry
+	memory = DISK_LIST;
+
+	// Traversing through Disk Free List for Free Space
+	while([memory] == 1) do
+
+		memory = memory + 1;     // Next Entry of Disk Free List
+
+		if(memory >= (DISK_LIST + 448)) then    // Checks if the Entry of Disk Free List has come to 448
+			break;				// Because From 448 onwards Swap Area Starts and stops seeing further		
+		endif;
+
+	endwhile;	
+	
+	// If no free space
+	if(memory >= (DISK_LIST + 448)) then
+
+		[physicalSP - 2] = -1;       // Setting Return Value as -1 indicating Failure
+		ireturn;                     // Switches From Kernel Mode To User Mode
+
+	endif;	
+	
+	// else
+
+	// Checking for File if Already Exists	
+	alias where S4;        // Stores the Physical Address of FAT Entry
+	where = FAT;
+
+	// Traversing through FAT Entry for a file with name which is present in filename variable
+	while([where] != filename) do
+		
+		where = where + 8;        // Next Filename present in FAT Entry
+
+		if(where >= (FAT + 512)) then     // Checks if the FAT Entries are Finished or not
+			break;
+		endif;
+
+	endwhile;
+
+	// If File Already Exists
+	if(where < (FAT + 512)) then
+		
+		[physicalSP - 2] = 0;     // Setting Return Value as 0 indicating Success
+		ireturn;                  // Switches From Kernel Mode To User Mode
+
+	endif;
+
+	// If File Doesnot Exists
+	where = FAT + 2;
+
+	// Traversing through FAT Entry for a Free Space it is indicated by -1 Present in Block number of Basic Block
+	while([where] != -1 || where < (5 * 512)) do
+	
+		where = where + 8;	  // Next FAT Entry of Block number of Basic Block
+    
+		if(where >= (FAT + 512)) then      // Checks if the FAT Entries are Finished or not
+			break;
+		endif;
+
+	endwhile;	
+
+	// There no FAT entry available
+	if(where >= (FAT + 512)) then
+
+		[physicalSP - 2] = -1;     // Setting Return Value as -1 indicating failure
+		ireturn;                   // Switches From Kernel Mode To User Mode
+
+	endif;
+
+	// else
+	
+	// FAT Entry
+
+		// FAT Entry at 0 = File Name
+		// FAT Entry at 1 = File Size
+		// FAT Entry at 2 = Block Number of Basic Block
+
+	// Putting FAT Entry for The new File name filename
+	[where - 2] = filename;
+	[where - 1] = 0;
+	[where] = memory;
+
+	// Loading Basic Block of the File into Sratchpad at page 1
+	load(1,memory);
+
+	// Setting words to -1 in Basic Block
+	where = 512;
+
+	// Setting Words in Block List to -1
+	while(where < (512 + 256)) do
+
+		[where] = -1;           // Setting word in the Block List to -1
+		where = where + 1;
+
+	endwhile;
+
+	// Storing Back the data to Basic Block
+	store(1,memory);	
+  
+	// Setting the Entry of Disk Free List for the Basic Block as 1
+	[memory] = 1;
+
+	// Updating FAT and Disk Free List in the memory back to the disk
+	store(5,19);
+	store(6,20);
+
+	// Setting Return Value as 0 indicating Success
+	[physicalSP - 2] = 0;
+	ireturn;
+
+endif;

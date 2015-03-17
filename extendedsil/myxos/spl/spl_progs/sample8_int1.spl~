@@ -1,0 +1,272 @@
+// Interrupt 1 Routine
+
+// Calculating physical Address of SP
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+// Getting System Call no. from the Stack
+alias Syscall S1;
+Syscall = [physicalSP - 1];
+
+// System Calls
+
+// Implementing System Call 1
+if(Syscall == 1) then	
+	
+	// Getting Arguments from the Stack
+	alias filename S2;
+	filename = [physicalSP - 3];	
+
+	// Checking for a free space in Disk Free List
+
+	// Initializing Starting Address of 6 Block or Disk Free List
+	alias memory S3;          // Stores the Physical Address of Disk Free List Entry
+	memory = DISK_LIST;
+
+	// Traversing through Disk Free List for Free Space
+	while([memory] == 1) do
+
+		memory = memory + 1;     // Next Entry of Disk Free List
+
+		if(memory >= (DISK_LIST + 448)) then    // Checks if the Entry of Disk Free List has come to 448
+			break;				// Because From 448 onwards Swap Area Starts and stops seeing further		
+		endif;
+
+	endwhile;	
+	
+	// If no free space
+	if(memory >= (DISK_LIST + 448)) then
+
+		[physicalSP - 2] = -1;       // Setting Return Value as -1 indicating Failure
+		ireturn;                     // Switches From Kernel Mode To User Mode
+
+	endif;	
+	
+	// else
+
+	// Checking for File if Already Exists	
+	alias where S4;        // Stores the Physical Address of FAT Entry
+	where = FAT;
+
+	// Traversing through FAT Entry for a file with name which is present in filename variable
+	while([where] != filename) do
+		
+		where = where + 8;        // Next Filename present in FAT Entry
+
+		if(where >= (FAT + 512)) then     // Checks if the FAT Entries are Finished or not
+			break;
+		endif;
+
+	endwhile;
+
+	// If File Already Exists
+	if(where < (FAT + 512)) then
+		
+		[physicalSP - 2] = 0;     // Setting Return Value as 0 indicating Success
+		ireturn;                  // Switches From Kernel Mode To User Mode
+
+	endif;
+
+	// If File Doesnot Exists
+	where = FAT + 2;
+
+	// Traversing through FAT Entry for a Free Space it is indicated by -1 Present in Block number of Basic Block
+	while([where] != -1 || where < (5 * 512)) do
+	
+		where = where + 8;	  // Next FAT Entry of Block number of Basic Block
+    
+		if(where >= (FAT + 512)) then      // Checks if the FAT Entries are Finished or not
+			break;
+		endif;
+
+	endwhile;	
+
+	// There no FAT entry available
+	if(where >= (FAT + 512)) then
+		
+		[physicalSP - 2] = -1;     // Setting Return Value as -1 indicating failure
+		ireturn;                   // Switches From Kernel Mode To User Mode
+
+	endif;
+
+	// else
+	
+	// FAT Entry
+
+		// FAT Entry at 0 = File Name
+		// FAT Entry at 1 = File Size
+		// FAT Entry at 2 = Block Number of Basic Block
+
+	// Putting FAT Entry for The new File name filename
+	[where - 2] = filename;
+	[where - 1] = 0;
+	[where] = memory-DISK_LIST;
+
+	// Loading Basic Block of the File into Sratchpad at page 1
+	load(1,memory-DISK_LIST);
+
+	// Setting words to -1 in Basic Block
+	where = 512;
+
+	// Setting Words in Block List to -1
+	while(where < (512 + 256)) do
+
+		[where] = -1;           // Setting word in the Block List to -1
+		where = where + 1;
+
+	endwhile;
+
+	// Storing Back the data to Basic Block
+	store(1,memory-DISK_LIST);	
+  
+	// Setting the Entry of Disk Free List for the Basic Block as 1
+	[memory] = 1;
+
+	// Updating FAT and Disk Free List in the memory back to the disk
+	store(5,19);
+	store(6,20);
+
+	// Setting Return Value as 0 indicating Success
+	[physicalSP - 2] = 0;
+	ireturn;
+
+endif;
+
+// Implementing System Call 4
+if(Syscall == 4) then
+
+	// Getting Arguments from Stack
+	alias filename S2;
+	filename = [physicalSP - 3];
+
+	// Checking if the File Exists or not
+	alias fat_entry S3;         // Stores the physical Address of FAT entry
+	fat_entry = FAT;        
+
+	// Traversing through FAT Entry for a file with name which is present in filename variable
+	while([fat_entry] != filename) do
+
+		[fat_entry] = [fat_entry] + 8;   // Next filename in FAT entry
+
+		if(fat_entry >= FAT + 512) then  // Checks Whether the File entries are Finished or not
+			break;
+		endif;  
+
+	endwhile;	
+
+	// There no FAT entry available
+        if(fat_entry >= (FAT + 512)) then
+
+                [physicalSP - 2] = -1;     // Setting Return Value as -1 indicating failure
+                ireturn;                   // Switches From Kernel Mode To User Mode
+
+        endif;	
+
+	// Storing FAT Index
+	alias fat_index S4;
+	fat_index = (fat_entry - FAT) / 8;  // FAT Index
+
+	// SWOFT == System Wide Open File Table
+	// Checking if file is open or not
+	alias SWOFT S5;
+	SWOFT = FILE_TABLE;     // Starting Index of SWOFT
+
+	// Checking for a file with FAT Index as fat_index
+	while([SWOFT] != fat_index) do		
+
+		SWOFT = SWOFT + 2;    // Next Entry in SWOFT
+
+		if(SWOFT >= FILE_TABLE + 128) then    // Checking for finished entries in SWOFT
+			break;
+		endif; 
+
+	endwhile;
+
+	// Checking if the file is Open or Not
+	if(SWOFT < FILE_TABLE + 128) then
+
+		[physicalSP - 2] = -1;     // Setting Return Value as -1 indicating failure
+        	ireturn;                   // Switches From Kernel Mode To User Mode
+
+	endif;
+
+	// Basic Block of the File
+	alias Basicblock S6;
+	Basicblock = [FAT + (fat_index * 8) + 2];
+
+	// Loading Basic Block of the File from Disk to Scratchpad in memory
+	load(1,Basicblock);
+
+	// Getting Value of Data Blocks from Basicblock
+	alias counter S7;
+	counter=512;
+
+	while([counter] != -1) do
+
+		alias there S9;
+		there=[counter];
+		load(1,there);    // Loading Datablocks from BasicBlock
+
+		// Setting all the Value in the Data Block to empty String ""
+		alias data S8;
+		data=512;
+
+		// Setting to Empty String
+		while(1) do
+			
+			[data] = "";      // Setting each Value to Empty String
+			data = data + 1;  // Next Value of Data Block
+			
+			// Checking if the Data Block is Finished or not
+			if(data >= (512 + 512)) then
+				break;
+			endif; 
+
+		endwhile;
+
+		store(1,there);     // Storing Datablocks back to Disk
+
+		[DISK_LIST + there] = 0;  // Setting data block entry in Disk Free List to 0 (unused)
+
+		load(1,Basicblock);   // Loading BasicBlock back to Scratchpad
+		counter=counter+1;    // Going to the Next Datablock entry in BasicBlock
+
+		// Checking if the Basic Block Entries are over
+		if(counter >= (512 + 256)) then
+			break;
+		endif;
+		
+	endwhile;			
+
+	// Loading BasicBlock to Scratchpad
+	load(1,Basicblock);
+
+	// Setting Value of Block List to empty string ""
+	counter=512;
+	
+	while(counter < (512 + 256)) do
+
+		[counter] = "";          // Setting to Empty String ""
+		counter = counter + 1;   // Next Value of Basic Block
+
+	endwhile; 
+
+	// Storing BasicBlock Back to Disk
+	store(1,Basicblock);
+
+	[DISK_LIST + Basicblock] = 0;    // Setting Basic block of a file in the Disk Free List to 0 (unused)
+	
+	// Invalidating FAT entry
+	[(fat_index * 8) + FAT + 2] = -1;              // Invalidating Basicblock field
+	[(fat_index * 8) + FAT + 1] = 0;      // Setting Filesize to Zero
+	[(fat_index * 8) + FAT + 0] = -1;     // Invalidating filename field
+
+	// Updating FAT and Disk Free List in the memory back to the disk
+        store(5,19);
+        store(6,20);
+
+	// Setting Return Value as 0 indicating Success
+        [physicalSP - 2] = 0;
+        ireturn;
+
+endif;

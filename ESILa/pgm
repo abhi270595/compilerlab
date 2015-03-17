@@ -1,0 +1,100 @@
+decl
+	integer a[100];
+	integer swap(integer &a, &b);
+	integer swap1(integer &a, &b);
+	integer partition(integer p, r);
+	integer sort(integer p, r);
+enddecl
+
+integer swap(integer &a, &b)
+{
+	decl
+		integer tmp;
+	enddecl
+	begin
+		tmp = a;
+		a = b;
+		b = tmp;
+		return 0;
+	end
+}
+
+integer swap1(integer &a, &b)
+{
+	decl
+		integer temp;
+	enddecl
+	begin
+		temp=swap(a,b);
+		return temp;
+	end
+}
+
+integer partition(integer p, r)
+{
+	decl
+		integer i, j, x, ret;
+	enddecl
+
+	begin
+		x = a[r];
+		i = p - 1;
+		j = p;
+
+		while (j < r)
+		do
+			if (a[j] <= x)
+			then
+				i = i + 1;
+				ret = swap(a[i], a[j]);
+			endif;
+			j = j + 1;
+		endwhile;
+		ret = swap(a[i+1], a[r]);
+		return i+1;
+	end
+}
+
+integer sort(integer p, r)
+{
+	decl
+		integer q, ret;
+	enddecl
+	begin
+		if (p < r)
+		then
+			q = partition(p, r);
+			ret = sort(p, q-1);
+			ret = sort(q+1, r);
+		endif;
+		return 0;
+	end
+}
+
+integer main()
+{
+	decl
+		integer n, i, ret;
+	enddecl
+
+	begin
+		read(n);
+
+		i = 0;
+		while (i < n)
+		do
+			read(a[i]);
+			i = i + 1;
+		endwhile;
+		ret = sort(0, n-1);
+
+		i = 0;
+		while (i < n)
+		do
+			write(a[i]);
+			i = i + 1;
+		endwhile;
+
+		return 0;
+	end
+}

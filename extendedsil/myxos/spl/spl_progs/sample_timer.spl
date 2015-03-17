@@ -1,0 +1,82 @@
+// Timer Interrupt Routine
+
+// Getting PID of Currently Running Process
+alias currentPID S0;
+currentPID = (PTBR - 1024) / 8;
+
+// Location of the PCB of currently running process
+alias currentPCB S1;
+currentPCB = READY_LIST + 32 * currentPID;
+
+// Setting READY STATE to 1(ready)
+[currentPCB + 1] = 1;
+
+// Setting BP and SP fields in the PCB
+[currentPCB + 2] = BP;
+[currentPCB + 3] = SP - 1;
+
+// Setting IP of the currently running process
+alias physicalSP S2;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+// Save IP of current process in the PCB from the stack
+[currentPCB + 4] = [physicalSP];
+
+// Setting PTBR & PTLR values of PCB
+[currentPCB + 5] = PTBR;
+[currentPCB + 6] = PTLR;
+
+// Saving Registers R0 to R7
+[currentPCB + 7] = R0;
+[currentPCB + 8] = R1;
+[currentPCB + 9] = R2;
+[currentPCB + 10] = R3;
+[currentPCB + 11] = R4;
+[currentPCB + 12] = R5;
+[currentPCB + 13] = R6;
+[currentPCB + 14] = R7;
+
+// Changing PID to other process using Round-Robin
+alias newPID S3;
+alias newPCB S4;
+newPID = (currentPID + 1) % 32;
+newPCB = READY_LIST + (32 * newPID);
+
+while([newPCB + 1]!=1) do
+	
+	// If No process in Ready State except the current process then stay at that process itself 
+	if(newPID==currentPID) then
+		break;
+	endif;
+	
+	newPID = (newPID + 1) % 32;
+	newPCB = READY_LIST + (32 * newPID);		
+
+endwhile;
+
+// Restoring Variable Values
+BP = [newPCB + 2];
+SP = [newPCB + 3];
+PTBR = [newPCB + 5];
+PTLR = [newPCB + 6];
+R0 = [newPCB + 7];
+R1 = [newPCB + 8];
+R2 = [newPCB + 9];
+R3 = [newPCB + 10];
+R4 = [newPCB + 11];
+R5 = [newPCB + 12];
+R6 = [newPCB + 13];
+R7 = [newPCB + 14];
+
+// Setting values for new process
+SP = SP + 1;
+alias newphysicalSP S5;
+newphysicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+[newphysicalSP] = [newPCB + 4];
+
+// Setting STATE field of new PCB to 2(Running)
+[newPCB + 1] = 2; 
+
+// IRET Machine Instruction
+ireturn;
+

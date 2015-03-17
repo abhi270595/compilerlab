@@ -1,0 +1,211 @@
+// EXHANDLER
+
+// STEP 1
+
+alias cause S0;
+alias VPagenum S1;
+alias Ip_addr S2;
+
+cause = EFR % 10;		        // Gets value of cause field (size 1 char)
+VPagenum = (EFR / 10) % 100;            // Gets value of BadVAddr 
+Ip_addr = (EFR / 1000);		        // Gets value of IP at the point of exception
+
+// END OF STEP 1
+
+// STEP 2
+
+if(cause != 0) then
+
+	// Calculating physical Address of SP
+	alias physicalSP S3;
+	physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+	// Getting System Call no. from the Stack
+	[physicalSP] = 10;
+
+	//Increamenting SP
+	SP = SP + 1;
+
+	inline "JMP 11776";
+
+endif;
+
+// END OF STEP 2 
+
+// STEP 3
+
+if([PTBR + (2 * VPagenum)] == -1) then
+	
+	// Calculating physical Address of SP
+	alias physicalSP S3;
+	physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+	// Getting System Call no. from the Stack
+	[physicalSP] = 10;
+
+	//Increamenting SP
+	SP = SP + 1;
+
+	inline "JMP 11776";
+
+endif;
+
+alias page S3;
+page=0;
+
+while(page < 64) do
+
+	if([MEM_LIST + page] == 0) then
+		break;
+	endif;
+	page = page + 1;
+
+endwhile;
+
+if(page < 64) then
+	[MEM_LIST + page] = 1;	
+endif;
+
+if(page >= 64) then
+
+	// Page Replacement Algorithm
+	
+	alias Victim S4;
+	Victim = (PTBR - PAGE_TABLE);
+
+	while(1) do
+
+		alias i S5;
+		alias flag S6;
+		i=0;
+		flag=0;
+
+		while(i < 3) do
+
+			if((PTBR - PAGE_TABLE) + (2 * VPagenum) != Victim + (2 * i)) then
+				
+				if([PAGE_TABLE + Victim + (2 * i) + 1] == "01") then
+		
+					if([MEM_LIST + [PAGE_TABLE + Victim + (2 * i)]] == 1) then
+                        
+						// Searching for a Free Space in Disk Free List in SWAP AREA
+						alias j S7;
+						j=448;
+
+						while(j < 512) do
+
+							if([DISK_LIST + j] == 0) then
+								break;
+							endif;
+							j = j + 1;							
+					
+						endwhile;
+
+						if(j >= 512) then
+
+							// Calculating physical Address of SP
+							alias physicalSP S8;
+							physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+							// Getting System Call no. from the Stack
+							[physicalSP] = 10;
+
+							//Increamenting SP
+							SP = SP + 1;
+
+							inline "JMP 11776";					
+				
+						endif;	
+						
+						// Getting Victim Page Number in memory
+						alias victim_page S8;
+						victim_page = [PAGE_TABLE + Victim + (2 * i)];
+						// Storing it to SWAP AREA from Memory
+						store(victim_page,j); 			
+						// Setting the block as used(1) in Disk Free List
+						[DISK_LIST + j] = 1;
+						// Setting the Physical Address to the block number thus found
+						[PAGE_TABLE + Victim + (2 * i)] = j;
+						// Setting Valid Bit of Auxillary Bits to Invalid "00"
+						[PAGE_TABLE + Victim + (2 * i) + 1] = "00";
+		
+						// Setting the Victim Page to the Page made Free by the Algorithm
+						page = victim_page;
+							
+						flag=1;
+						break;
+
+					endif; 
+			
+				endif;
+
+				if([PAGE_TABLE + Victim + (2 * i) + 1] == "11") then
+					[PAGE_TABLE + Victim + (2 * i) + 1] = "01";
+				endif;
+
+			endif;
+			i = i + 1;			
+	
+		endwhile;
+
+		if(flag == 1) then
+			break;
+		endif;
+
+		Victim = (Victim + 8) % 256;
+
+		//if(Victim == (PTBR - PAGE_TABLE)) then
+		//	break;
+		//endif;
+	
+	endwhile; 
+
+	// END of Page Replacement Algorithm
+
+endif;
+
+// Checking if the Physical Page Number Corresponding to VPagenum is between 21 to 447
+alias Block_num S4;
+Block_num = [PTBR + (2 * VPagenum)];
+
+if(Block_num >= 21 && Block_num <= 447) then
+	
+	// Loading the Block to Memory Found
+	load(page,Block_num);		
+	
+endif;
+
+if(Block_num >= 448 && Block_num <= 511) then
+	
+	// Loading the Block to Memory Found
+	load(page,Block_num);
+
+	// Decreament the Disk Free List Value Corresponding to Block_num
+	[DISK_LIST + Block_num] = [DISK_LIST + Block_num] - 1;	
+
+	// Store Back Disk Free List to Disk
+	store(6,20);	
+	
+endif;
+
+// Setting the Physical Address Field to the Page in memory
+[PTBR + (2 * VPagenum)] = page;
+// Setting the Auxillary Bit to "11"
+[PTBR + (2 * VPagenum) + 1] = "11";
+
+// Setting the IP to Ip_addr from Exhandler
+
+//Increamenting SP
+SP = SP + 1; 
+
+// Calculating physical Address of SP
+alias physicalSP S5;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+// Setting IP as Ip_addr value obtained from Exhandler
+[physicalSP] = Ip_addr;
+
+// END OF STEP 3
+
+// IRET Machine Instruction
+ireturn;

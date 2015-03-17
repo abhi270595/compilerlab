@@ -1,0 +1,275 @@
+// Interrupt 7 Routine
+
+// Calculating physical Address of SP
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+// Getting System Call no. from the Stack
+alias Syscall S1;
+Syscall = [physicalSP - 1];
+
+// System Calls
+
+// Implementing System Call 10 EXIT()
+if(Syscall == 10) then
+
+	// Checking if any process is there in Ready or Running State
+	alias i S2;
+	i=0;
+	
+	while(i < 32) do
+		
+		if([READY_LIST + 1 + (i * 32)]!=0) then
+			break;
+		endif;
+		
+		i = i + 1;
+		
+	endwhile; 
+	
+	// No Processes are currently running or are in ready state then halt the machine
+	if(i >= 32) then
+		
+		halt;
+		
+	endif;
+	
+	// Calculate PID of Currently Running Process
+	alias currentPID S3;
+	currentPID = (PTBR - PAGE_TABLE) / 8;
+	
+	i=0;
+	
+	while(i < 8) do
+
+		// Storing Pointer to System Wide Open File Table Entry
+		alias SWOFT S4;
+		SWOFT = [READY_LIST + (currentPID * 32) + 15 + (i * 2)];
+
+		// Checking if there is an entry corresponding to the i
+		if(SWOFT != -1) then
+
+			// Decrementing Value of File Open Count in System Wide Open File Table
+			alias FOC S5;
+			FOC = [FILE_TABLE + (SWOFT * 2) + 1];
+			FOC = FOC - 1;
+		
+			// Updating Value in SWOFT
+			[FILE_TABLE + (SWOFT * 2) + 1] = FOC;
+	
+			// Checking if Value of File Open Count is zero or not
+			if(FOC == 0) then
+	
+				// Invalidate System Wide Open File Table By Setting FAT Index as -1
+				[FILE_TABLE + (SWOFT * 2) + 0] = -1;
+			
+			endif;
+			
+			// Invalidating the Per-Process Open File Table Entry By Setting it to -1			
+			[READY_LIST + (currentPID * 32) + 15 + (i * 2)] = -1;
+	
+		endif;
+		
+		i = i + 1;
+		
+	endwhile;
+	
+	// Setting the State of Current Process to terminated(0)
+	[READY_LIST + 1 + (currentPID * 32)] = 0;
+	
+	i=0;
+	// Checking for Waiting Processes
+	while(i < 32) do
+
+		// Waiting for the Current Process To Exit then Set its Status to Ready
+		if([READY_LIST + 1 + (i * 32)] - 100 == currentPID) then
+			[READY_LIST + 1 + (i * 32)] = 1;	
+		endif;
+
+		i = i + 1;
+
+	endwhile;
+
+	i=0;
+	// Removing Page Table Entries
+	while(i < 8) do
+	
+		// if auxillary bit is valid then remove the page table and per process page table entries
+		if([PTBR + i + 1] == "01" || [PTBR + i + 1] == "11") then
+		
+			alias mem_loc S6;
+			mem_loc = [PTBR + i];                                  // Address on page table
+			// Decreamenting Memory Free List value, corresponding to a particular address
+			[MEM_LIST + mem_loc] = [MEM_LIST + mem_loc] - 1;          
+			[PTBR + i] = -1;	                                   // Address field as invalid -1
+			[PTBR + i + 1]="00";                                   // Auxillary bit as invalid "00"
+		
+		endif;
+		
+		// If Valid Bit is 0 in Auxillary Bits Value
+		if([PTBR + i + 1] == "00" || [PTBR + i + 1] == "10") then
+			
+			// If Physical Page Number field of Page Table is greater than or equal to 448
+			if([PTBR + i] >= 448) then
+
+				// Decreamenting Disk Free List Value of the corresponding block by 1
+				[DISK_LIST + [PTBR + i]] = [DISK_LIST + [PTBR + i]] - 1;
+				// Storing Back Disk Free List to the Disk
+				store(6,20);
+
+			endif;
+		
+		endif;
+		
+		i = i + 2;
+		
+	endwhile;
+	
+	// Changing PID to other process using Round-Robin
+	alias newPID S7;
+	alias newPCB S8;
+	newPID = (currentPID + 1) % 32;
+	newPCB = READY_LIST + (32 * newPID);
+
+	while([newPCB + 1]!=1) do
+	
+		// If No process in Ready State except the current process then stay at that process itself 
+		if(newPID==currentPID) then
+			halt;
+		endif;
+	
+		newPID = (newPID + 1) % 32;
+		newPCB = READY_LIST + (32 * newPID);		
+
+	endwhile;
+
+	// Restoring Variable Values
+	BP = [newPCB + 2];
+	SP = [newPCB + 3];
+	PTBR = [newPCB + 5];
+	PTLR = [newPCB + 6];
+	R0 = [newPCB + 7];
+	R1 = [newPCB + 8];
+	R2 = [newPCB + 9];
+	R3 = [newPCB + 10];
+	R4 = [newPCB + 11];
+	R5 = [newPCB + 12];
+	R6 = [newPCB + 13];
+	R7 = [newPCB + 14];
+
+	// Setting values for new process	
+	SP = SP + 1;
+	alias newphysicalSP S9;
+	newphysicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+	[newphysicalSP] = [newPCB + 4];
+
+	// Setting STATE field of new PCB to 2(Running)
+	[newPCB + 1] = 2; 
+
+	// IRET Machine Instruction
+	ireturn;
+	
+endif;
+
+// Implementing System Call 13
+if(Syscall == 13) then
+
+	// Getting Arguments from Stack
+	// 1. Process ID
+	alias WaitingPID S2;
+	WaitingPID = [physicalSP - 3];
+	
+	// PCB Status Value
+	alias status S3;
+	status = [READY_LIST + (WaitingPID * 32) + 1];
+
+	if(status == 2 || status == 0) then 
+
+		// Setting Return Value as -1 ERROR
+		[physicalSP - 2] = -1;
+		// IRET Machine Instruction
+		ireturn;
+
+	endif;
+
+	alias currentPID S4;
+	currentPID = (PTBR - PAGE_TABLE) / 8;
+
+	// Setting Status as 100 + currentPID indicating It is waiting for Process with PID WaitingPID
+	[READY_LIST + ( currentPID * 32) + 1] = 100 + WaitingPID;
+
+	// Setting Return Value as 0 Success
+	[physicalSP - 2] = 0;
+	
+	// Scheduling New Process
+	alias newPID S7;
+	alias newPCB S8;
+	newPID = (currentPID + 1) % 32;
+	newPCB = READY_LIST + (32 * newPID);
+
+	while([newPCB + 1]!=1) do
+	
+		// If No process in Ready State except the current process then stay at that process itself 
+		if(newPID==currentPID) then
+			halt;
+		endif;
+	
+		newPID = (newPID + 1) % 32;
+		newPCB = READY_LIST + (32 * newPID);		
+
+	endwhile;
+
+	// Restoring Variable Values
+	BP = [newPCB + 2];
+	SP = [newPCB + 3];
+	PTBR = [newPCB + 5];
+	PTLR = [newPCB + 6];
+	R0 = [newPCB + 7];
+	R1 = [newPCB + 8];
+	R2 = [newPCB + 9];
+	R3 = [newPCB + 10];
+	R4 = [newPCB + 11];
+	R5 = [newPCB + 12];
+	R6 = [newPCB + 13];
+	R7 = [newPCB + 14];
+
+	// Setting values for new process	
+	SP = SP + 1;
+	alias newphysicalSP S9;
+	newphysicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+	[newphysicalSP] = [newPCB + 4];
+
+	// Setting STATE field of new PCB to 2(Running)
+	[newPCB + 1] = 2; 
+
+	// IRET Machine Instruction
+	ireturn;
+
+endif;
+
+// Implementing System Call 14
+if(Syscall == 14) then
+	
+	alias currentPID S2;
+	currentPID = (PTBR - PAGE_TABLE) / 8;
+ 	
+	alias i S3;
+	i=0;
+	// Signaling the Processes
+	while(i < 32) do
+
+		// Waiting for the Current Process To Exit then Set its Status to Ready
+		if([READY_LIST + 1 + (i * 32)] - 100 == currentPID) then
+			[READY_LIST + 1 + (i * 32)] = 1;	
+		endif;
+
+		i = i + 1;
+
+	endwhile;
+
+	// Setting Return Value as 0 Success
+	[physicalSP - 2] = 0;
+	// IRET Machine Instruction
+	ireturn;
+
+endif;

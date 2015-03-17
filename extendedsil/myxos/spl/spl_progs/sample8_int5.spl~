@@ -1,0 +1,285 @@
+// Interrupt 5 Routine
+
+// Calculating physical Address of SP
+alias physicalSP S0;
+physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+// Getting System Call no. from the Stack
+alias Syscall S1;
+Syscall = [physicalSP - 1];
+
+// System Calls
+
+// Implementing System Call 8 FORK()
+if(Syscall == 8) then
+
+	// Checking for a free PCB in Ready List
+	alias counter S2;
+	counter=0;
+	
+	while(counter < 32) do
+
+		// Checking if State field value is equal to 0
+		if([READY_LIST + 1 + (counter * 32)]==0) then
+			break;
+		endif;
+		
+		counter = counter + 1;   // Moving to Next PCB's
+
+	endwhile;
+
+	// If no PCB is found return -1 as failure
+	if(counter >= 32) then
+
+		[physicalSP - 2] = -1;       // Setting Return Value as -1 indicating Failure
+        ireturn;		
+
+	endif;
+
+	// Setting PID Field of the PCB obtained above as counter
+	[READY_LIST + (counter * 32)]=counter;
+
+	// STEP 4
+
+	// Searching for a free Space in Memory Free List
+	alias child_stack S3;
+	child_stack = 0;
+	
+	while(child_stack < 64) do 
+	
+		// If Found then Break
+		if([MEM_LIST + child_stack] == 0) then
+			break;
+		endif;
+		child_stack = child_stack + 1;             // Next Value of Memory Free List
+
+	endwhile;
+
+	if(child_stack >= 64) then
+        
+            alias Victim S4;
+	Victim = (PTBR - PAGE_TABLE);
+
+	while(1) do
+
+		alias i S5;
+		alias flag S6;
+		i=0;
+		flag=0;
+
+		while(i < 3) do
+
+			//if((PTBR - PAGE_TABLE) + (2 * VPagenum) != Victim + (2 * i)) then
+				
+				if([PAGE_TABLE + Victim + (2 * i) + 1] == "01") then
+		            print "hello";
+					if([MEM_LIST + [PAGE_TABLE + Victim + (2 * i)]] == 1) then
+                        
+						// Searching for a Free Space in Disk Free List in SWAP AREA
+						alias j S7;
+						j=448;
+
+						while(j < 512) do
+
+							if([DISK_LIST + j] == 0) then
+								break;
+							endif;
+							j = j + 1;							
+					
+						endwhile;
+
+						if(j >= 512) then
+
+							// Calculating physical Address of SP
+							alias physicalSP S8;
+							physicalSP = ([PTBR + 2 * (SP / 512)] * 512) + (SP % 512);
+
+							// Getting System Call no. from the Stack
+							[physicalSP] = 10;
+
+							//Increamenting SP
+							SP = SP + 1;
+
+							inline "JMP 11776";					
+				
+						endif;	
+						
+						// Getting Victim Page Number in memory
+						alias victim_page S8;
+						victim_page = [PAGE_TABLE + Victim + (2 * i)];
+						// Storing it to SWAP AREA from Memory
+						store(victim_page,j); 			
+						// Setting the block as used(1) in Disk Free List
+						[DISK_LIST + j] = 1;
+						// Setting the Physical Address to the block number thus found
+						[PAGE_TABLE + Victim + (2 * i)] = j;
+						// Setting Valid Bit of Auxillary Bits to Invalid "00"
+						[PAGE_TABLE + Victim + (2 * i) + 1] = "00";
+		
+						// Setting the Victim Page to the Page made Free by the Algorithm
+						//page = victim_page;
+						child_stack = victim_page;
+						print "V";
+					    print victim_page;
+						flag=1;
+						break;
+
+					endif; 
+			
+				endif;
+
+				if([PAGE_TABLE + Victim + (2 * i) + 1] == "11") then
+				    print "hi";
+					[PAGE_TABLE + Victim + (2 * i) + 1] = "01";
+				endif;
+
+			//endif;
+			i = i + 1;			
+	
+		endwhile;
+
+		if(flag == 1) then
+			break;
+		endif;
+
+		Victim = (Victim + 8) % 256;
+
+		if(Victim == (PTBR - PAGE_TABLE)) then
+			break;
+		endif;
+	
+	endwhile; 
+//    child_stack = 
+//		[physicalSP - 2] = -1;       // Setting Return Value as -1 indicating Failure
+//        ireturn;		
+
+	endif;
+	print child_stack;
+//	print victim_page;
+    breakpoint;
+	// Setting Memory Free List Value Corresponding to the memory obtained above as used(1)
+	[MEM_LIST + child_stack] = 1;
+
+	// Copying the Stack Page From Parent Process to Child Process
+	alias i S4;
+	i=0;	
+	
+	while(i < 512) do
+
+		[(child_stack * 512) + i]=[([PTBR + 6] * 512) + i];
+		i = i + 1;
+
+	endwhile;
+
+	// Calculating Per Process Base Table Register for Child Process
+	alias PTBR_child S5;	
+	PTBR_child = (counter * 8) + PAGE_TABLE;
+
+	// Setting Page Table Value of Stack of Child Process
+	[PTBR_child + 6] = child_stack;
+	[PTBR_child + 7] = "01";				// Setting Auxillary Bit to "01" Valid
+
+	// Copying Page Table Entries of Parent Process to Child Process
+	i=0;
+	
+	while(i < 3) do
+
+        alias block_addr S6;
+        alias auxillary S7;
+        block_addr = [PTBR + (i * 2)];
+        auxillary = [PTBR + (i * 2) + 1];
+		// Copying both block Address and Auxillary Bit of Parent Process to Child Process
+		[PTBR_child + (i * 2)] = block_addr;
+		[PTBR_child + (i * 2) + 1] = auxillary;
+
+		// If Valid Bit is 1 in Auxillary Bits Value
+		if(auxillary == "01" || auxillary == "11") then
+			// Increamenting Memory Free List Entry Corresponding Address Copied above		
+			[MEM_LIST + block_addr] = [MEM_LIST + block_addr] + 1;          
+		endif;
+
+		// If Valid Bit is 0 in Auxillary Bits Value
+		if(auxillary == "00" || auxillary == "10") then
+			
+			// If Physical Page Number field of Page Table is greater than or equal to 448
+			if(block_addr >= 448) then
+
+				// Increamenting Disk Free List Value of the corresponding block by 1
+				[DISK_LIST + block_addr] = [DISK_LIST + block_addr] + 1;
+				// Storing Back Disk Free List to the Disk
+				store(6,20);
+
+			endif;
+		
+		endif;
+		
+		i = i + 1;
+	
+	endwhile;	
+
+	// END STEP 4
+
+	// Setting PTBR field of child process as calculated
+	[READY_LIST + (counter * 32) + 5] = PTBR_child;            // PTBR
+
+	// Setting IP field of Child Process to Value of IP present in the top of the Stack
+	[READY_LIST + (counter * 32) + 4] = [physicalSP];          // IP
+
+	// Setting SP field of child process to Value physicalSP - 1 so as to give feeling of IRET as in Parent Process
+	[READY_LIST + (counter * 32) + 3] = SP - 1;                // SP
+
+	// Setting Register Values From Register itself
+	[READY_LIST + (counter * 32) + 2] = BP;                    // BP
+	[READY_LIST + (counter * 32) + 6] = PTLR;                  // PTLR
+	[READY_LIST + (counter * 32) + 7] = R0;                    // R0
+	[READY_LIST + (counter * 32) + 8] = R1;                    // R1
+	[READY_LIST + (counter * 32) + 9] = R2;                    // R2
+	[READY_LIST + (counter * 32) + 10] = R3;                   // R3
+	[READY_LIST + (counter * 32) + 11] = R4;                   // R4
+	[READY_LIST + (counter * 32) + 12] = R5;                   // R5
+	[READY_LIST + (counter * 32) + 13] = R6;                   // R6
+	[READY_LIST + (counter * 32) + 14] = R7;                   // R7
+
+	// Calculating PID of current Process
+	alias PPID S7;
+	PPID = (PTBR - PAGE_TABLE) / 8;
+	// Setting Parent Process to Currently Running Process which Forks this Process
+	[READY_LIST + (counter * 32) + 31] = PPID;                 // Parent Process PID
+
+	// Copying Per Process File Open Table of Parent Process to Child Process
+	alias index S6;	
+	index = 15;
+
+	while(index < 31) do 	
+
+		// Copying System Wide Open File Table Pointer
+		[READY_LIST + (counter * 32) + index]=[READY_LIST + (((PTBR - PAGE_TABLE) / 8) * 32) + index];  
+		// Copying LSEEK Position
+		[READY_LIST + (counter * 32) + index + 1]=[READY_LIST + (((PTBR - PAGE_TABLE) / 8) * 32) + index + 1];
+		// Incrementing the File Open Count by 1 ,Since one new process is also accessing it
+		alias SWOFT S8;
+		SWOFT = [READY_LIST + (counter * 32) + index];
+		[FILE_TABLE + 2 * SWOFT + 1] = [FILE_TABLE + 2 * SWOFT + 1] + 1;
+		index = index + 2;                                 // Increamenting index by 2
+
+	endwhile;
+
+	// Setting State to Ready(1) in State Field of Child Process
+	[READY_LIST + (counter * 32) + 1] = 1;
+
+	// Setting Return Value of Parent Process to PID of Child Process
+	[physicalSP - 2] = counter;
+
+	// Setting Return Value of Child Process to -2
+	// Calculating physical Address of SP
+	alias child_physicalSP S8;
+	child_physicalSP = ([PTBR_child + 2 * ((SP - 1) / 512)] * 512) + ((SP - 1) % 512);
+	[child_physicalSP - 1] = -2;
+    
+    
+   // breakpoint;
+    
+	// IRET Machine Instruction
+	ireturn; 
+
+endif;

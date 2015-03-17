@@ -1,0 +1,35 @@
+decl
+    integer fib(integer n;boolean x);
+enddecl
+
+integer fib(integer n;boolean x)
+{
+    decl
+        integer result;
+    enddecl
+    begin
+        if(n == 0) then
+            result = 0;
+        else 
+            if(n == 1) then
+                result = 1;
+            else
+                result = fib(n-1,x) + fib(n-2,x);
+            endif;
+        endif;
+        return result;
+    end
+}
+
+integer main()
+{
+decl
+integer i;
+enddecl
+begin
+    read(i);
+    write(fib(i,TRUE));
+    return 0;
+end
+}
+
