@@ -1,0 +1,37 @@
+decl
+    integer a(integer x,y);
+enddecl
+
+integer a(integer x, y)
+{
+    decl
+        integer result;
+    enddecl
+    begin
+    if(x == 0) then
+        result = y;
+    else 
+        if(y == 0) then
+            result = x;
+        else
+            result = a(a(x-1,y-1),y-1);
+        endif;
+    endif;
+
+    return result;
+    end
+}
+
+integer main()
+{
+    decl
+        integer x,y;
+    enddecl
+    begin
+        read(x);
+        read(y);
+        write(a(x,y));
+        return 0;
+    end
+}
+

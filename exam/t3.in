@@ -1,0 +1,46 @@
+decl
+	integer d;
+	pair gcd(pair x);
+enddecl
+
+pair gcd(pair x)
+{
+	decl
+		integer a, b, r, q;
+		pair tmp, ret;
+	enddecl
+	begin
+		a = x.1;
+		b = x.2;
+		if (b == 0)
+		then
+			d = a;
+			ret = (1, 0);
+		else
+			r = a % b;
+			q = a / b;
+			tmp = gcd((b,r));
+			ret = (tmp.1, tmp.2 - tmp.1 * q);
+		endif;
+		return ret;
+	end
+}
+
+integer main()
+{
+	decl
+		integer a, b;
+		pair x;
+	enddecl
+	begin
+		read(a);
+		read(b);
+		x.1 = a;
+		x.2 = b;
+		x = gcd(x);
+		write(d);
+		write(x.2);
+		write(x.1);
+		return 0;
+	end
+}
